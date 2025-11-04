@@ -1,0 +1,174 @@
+.card {
+  height: 9.64rem; /* 154px - fixed height for virtualization */
+  background: var(--base50);
+  border: 1px solid var(--base300);
+  border-radius: 8px;
+  padding: 12px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.card:hover {
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  transform: translateY(-2px);
+  border-color: var(--base400);
+}
+
+/* Header */
+.header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  min-height: 20px;
+}
+
+.domainInfo {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex: 1;
+  min-width: 0; /* Allow text truncation */
+}
+
+.domainName {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--base900);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.favoriteBtn {
+  background: none;
+  border: none;
+  cursor: pointer;
+  font-size: 18px;
+  color: var(--base500);
+  padding: 0;
+  width: 20px;
+  height: 20px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: color 0.2s ease;
+  flex-shrink: 0;
+}
+
+.favoriteBtn:hover {
+  color: var(--yellow600);
+}
+
+.favoriteBtn.active {
+  color: var(--yellow600);
+}
+
+/* Chart */
+.chartContainer {
+  flex: 1;
+  min-height: 80px;
+  max-height: 80px;
+}
+
+/* Metrics */
+.metrics {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  align-items: center;
+}
+
+.metric {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 12px;
+}
+
+.metricIcon {
+  color: var(--base600);
+  flex-shrink: 0;
+}
+
+.metricValue {
+  font-weight: 600;
+  color: var(--base900);
+}
+
+.change {
+  font-size: 11px;
+  font-weight: 500;
+}
+
+.change.positive {
+  color: var(--green600);
+}
+
+.change.negative {
+  color: var(--red600);
+}
+
+.change.neutral {
+  color: var(--base600);
+}
+
+/* Tags */
+.tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  margin-top: auto;
+}
+
+.tag {
+  font-size: 10px;
+  padding: 2px 6px;
+  background: var(--base200);
+  color: var(--base700);
+  border-radius: 3px;
+  font-weight: 500;
+}
+
+/* Realtime */
+.realtime {
+  position: absolute;
+  top: 12px;
+  right: 40px;
+  font-size: 11px;
+  color: var(--base700);
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.realtimeDot {
+  color: var(--green600);
+  font-size: 8px;
+  animation: pulse 2s ease-in-out infinite;
+}
+
+@keyframes pulse {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.5;
+  }
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+  .card {
+    height: auto;
+    min-height: 9.64rem;
+  }
+
+  .metrics {
+    font-size: 11px;
+  }
+}

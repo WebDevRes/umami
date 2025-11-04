@@ -1,0 +1,22 @@
+.container {
+  position: relative;
+  width: 100%;
+  overflow: hidden;
+}
+
+.container canvas {
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+
+.empty {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  color: var(--base600);
+  font-size: 12px;
+  background: var(--base50);
+  border-radius: 4px;
+}

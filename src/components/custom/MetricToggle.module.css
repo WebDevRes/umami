@@ -1,0 +1,61 @@
+.container {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 16px 0;
+}
+
+.label {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--base700);
+}
+
+.buttons {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.button {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 12px;
+  background: transparent;
+  border: 1px solid var(--base300);
+  border-radius: 6px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--base700);
+}
+
+.button:hover {
+  background: var(--base100);
+  border-color: var(--base400);
+}
+
+.button.active {
+  background: var(--base200);
+  border-color: var(--base500);
+  color: var(--base900);
+}
+
+.buttonLabel {
+  white-space: nowrap;
+}
+
+/* Responsive - hide labels on mobile */
+@media (max-width: 768px) {
+  .buttonLabel {
+    display: none;
+  }
+
+  .button {
+    padding: 8px;
+    min-width: 36px;
+    justify-content: center;
+  }
+}
