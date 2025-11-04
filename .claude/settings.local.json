@@ -1,0 +1,16 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(find:*)",
+      "Bash(cat:*)",
+      "Bash(git remote:*)",
+      "Bash(git remote add:*)",
+      "Bash(git branch:*)",
+      "Bash(git fetch:*)",
+      "Bash(test:*)",
+      "Bash(git add:*)"
+    ],
+    "deny": [],
+    "ask": []
+  }
+}

@@ -1,0 +1,12 @@
+# Пример файла с доменами
+# Каждый домен на новой строке
+# Строки начинающиеся с # игнорируются
+
+example1.com
+example2.ru
+site3.net
+mywebsite.org
+test-domain.com
+
+# Можно добавлять комментарии
+another-site.com
