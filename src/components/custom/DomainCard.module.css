@@ -1,5 +1,5 @@
 .card {
-  height: 9.64rem; /* 154px - fixed height for virtualization */
+  height: 12rem; /* 192px - increased for better chart visibility */
   background: var(--base50);
   border: 1px solid var(--base300);
   border-radius: 8px;
@@ -8,7 +8,7 @@
   transition: all 0.2s ease;
   display: flex;
   flex-direction: column;
-  gap: 8px;
+  gap: 10px;
 }
 
 .card:hover {
@@ -70,8 +70,9 @@
 /* Chart */
 .chartContainer {
   flex: 1;
-  min-height: 80px;
-  max-height: 80px;
+  min-height: 100px;
+  max-height: 100px;
+  position: relative;
 }
 
 /* Metrics */

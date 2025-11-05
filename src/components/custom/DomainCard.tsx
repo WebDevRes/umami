@@ -111,7 +111,7 @@ function DomainCardComponent({
 
       {/* Chart */}
       <div className={styles.chartContainer}>
-        <MiniChart data={domain.timeSeries} activeMetrics={activeMetrics} height={80} />
+        <MiniChart data={domain.timeSeries} activeMetrics={activeMetrics} height={100} />
       </div>
 
       {/* Metrics */}

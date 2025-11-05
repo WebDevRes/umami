@@ -1,6 +1,29 @@
 import { useRef, useEffect, useMemo } from 'react';
+import {
+  Chart as ChartJS,
+  CategoryScale,
+  LinearScale,
+  PointElement,
+  LineElement,
+  Title,
+  Tooltip,
+  Filler,
+  Legend,
+} from 'chart.js';
 import { TimeSeriesDataPoint, MetricType } from '@/lib/custom/types';
 import styles from './MiniChart.module.css';
+
+// Register Chart.js components
+ChartJS.register(
+  CategoryScale,
+  LinearScale,
+  PointElement,
+  LineElement,
+  Title,
+  Tooltip,
+  Filler,
+  Legend,
+);
 
 export interface MiniChartProps {
   data: TimeSeriesDataPoint[];
@@ -68,108 +91,95 @@ export function MiniChart({ data, activeMetrics, height = 80, className }: MiniC
     const ctx = canvasRef.current.getContext('2d');
     if (!ctx) return;
 
-    // Lazy load Chart.js (code splitting)
-    let isMounted = true;
+    // Destroy existing chart
+    if (chartRef.current) {
+      chartRef.current.destroy();
+    }
 
-    const initChart = async () => {
-      const ChartModule = await import('chart.js/auto');
-      const ChartJSClass = ChartModule.default;
-
-      if (!isMounted || !canvasRef.current) return;
-
-      // Destroy existing chart
-      if (chartRef.current) {
-        chartRef.current.destroy();
-      }
-
-      // Create new chart
-      chartRef.current = new ChartJSClass(ctx, {
-        type: 'line',
-        data: chartData,
-        options: {
-          responsive: true,
-          maintainAspectRatio: false,
-          animation: {
-            duration: 0, // Disable animations for better performance with 500+ cards
+    // Create new chart
+    chartRef.current = new ChartJS(ctx, {
+      type: 'line',
+      data: chartData,
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        animation: {
+          duration: 0, // Disable animations for better performance with 500+ cards
+        },
+        interaction: {
+          mode: 'index',
+          intersect: false,
+        },
+        // Performance optimization
+        parsing: false,
+        normalized: true,
+        scales: {
+          x: {
+            display: false, // Hide x-axis for compact view
+            grid: {
+              display: false,
+            },
           },
-          interaction: {
+          y: {
+            display: false, // Hide y-axis for compact view
+            grid: {
+              display: false,
+            },
+            beginAtZero: true,
+          },
+        },
+        plugins: {
+          legend: {
+            display: false, // No legend in mini chart
+          },
+          tooltip: {
+            enabled: true,
             mode: 'index',
             intersect: false,
-          },
-          // Performance optimization
-          parsing: false,
-          normalized: true,
-          scales: {
-            x: {
-              display: false, // Hide x-axis for compact view
-              grid: {
-                display: false,
+            backgroundColor: 'rgba(0, 0, 0, 0.8)',
+            titleColor: '#fff',
+            bodyColor: '#fff',
+            borderColor: 'rgba(255, 255, 255, 0.1)',
+            borderWidth: 1,
+            padding: 8,
+            displayColors: true,
+            callbacks: {
+              title: tooltipItems => {
+                // Format date
+                const date = tooltipItems[0]?.label;
+                if (!date) return '';
+                return new Date(date).toLocaleDateString('en-US', {
+                  month: 'short',
+                  day: 'numeric',
+                });
               },
-            },
-            y: {
-              display: false, // Hide y-axis for compact view
-              grid: {
-                display: false,
-              },
-              beginAtZero: true,
-            },
-          },
-          plugins: {
-            legend: {
-              display: false, // No legend in mini chart
-            },
-            tooltip: {
-              enabled: true,
-              mode: 'index',
-              intersect: false,
-              backgroundColor: 'rgba(0, 0, 0, 0.8)',
-              titleColor: '#fff',
-              bodyColor: '#fff',
-              borderColor: 'rgba(255, 255, 255, 0.1)',
-              borderWidth: 1,
-              padding: 8,
-              displayColors: true,
-              callbacks: {
-                title: tooltipItems => {
-                  // Format date
-                  const date = tooltipItems[0]?.label;
-                  if (!date) return '';
-                  return new Date(date).toLocaleDateString('en-US', {
-                    month: 'short',
-                    day: 'numeric',
-                  });
-                },
-                label: context => {
-                  const label = context.dataset.label || '';
-                  const value = context.parsed.y;
+              label: context => {
+                const label = context.dataset.label || '';
+                const value = context.parsed.y;
 
-                  // Format value
-                  let formatted: string;
-                  if (label === 'Avg. Time') {
-                    // Display minutes
-                    formatted = `${value.toFixed(1)} min`;
-                  } else if (label === 'Bounces') {
-                    formatted = `${value.toFixed(1)}%`;
-                  } else if (value >= 1000) {
-                    formatted = `${(value / 1000).toFixed(1)}k`;
-                  } else {
-                    formatted = value.toFixed(0);
-                  }
+                // Format value
+                let formatted: string;
+                if (label === 'Avg. Time') {
+                  // Display minutes
+                  formatted = `${value.toFixed(1)} min`;
+                } else if (label === 'Bounces') {
+                  formatted = `${value.toFixed(1)}%`;
+                } else if (value >= 1000) {
+                  formatted = `${(value / 1000).toFixed(1)}k`;
+                } else {
+                  formatted = value.toFixed(0);
+                }
 
-                  return `${label}: ${formatted}`;
-                },
+                return `${label}: ${formatted}`;
               },
             },
           },
         },
-      });
-    };
-
-    initChart();
+      },
+    });
 
     // Cleanup
     return () => {
-      isMounted = false;
       if (chartRef.current) {
         chartRef.current.destroy();
         chartRef.current = null;

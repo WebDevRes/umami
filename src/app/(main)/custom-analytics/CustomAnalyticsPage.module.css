@@ -1,0 +1,25 @@
+/* Custom Analytics Page - Main Layout */
+/* CUSTOM: New styles for custom analytics dashboard */
+/* Date: 2025-01-04 */
+
+.container {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  min-height: 100vh;
+}
+
+.content {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+  padding: 0;
+  max-width: 100%;
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+  .content {
+    gap: 1rem;
+  }
+}
