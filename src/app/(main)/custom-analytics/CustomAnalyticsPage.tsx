@@ -77,6 +77,11 @@ export function CustomAnalyticsPage() {
     setDomains(prev => prev.map(d => ({ ...d, tags: d.tags.filter(t => t !== tag) })));
   }, []);
 
+  // Handler: Update domain tags
+  const handleDomainTagsChange = useCallback((domainId: string, tags: string[]) => {
+    setDomains(prev => prev.map(d => (d.id === domainId ? { ...d, tags } : d)));
+  }, []);
+
   // Handler: Export data
   const handleExport = useCallback(() => {
     // TODO: Implement CSV export
@@ -100,7 +105,6 @@ export function CustomAnalyticsPage() {
         <FilterBar
           filters={filterState}
           availableTags={availableTags}
-          realtimeTotal={aggregatedMetrics.realtimeTotal}
           onFiltersChange={handleFilterChange}
           onExport={handleExport}
         />
@@ -116,7 +120,9 @@ export function CustomAnalyticsPage() {
           domains={regularDomains}
           favorites={favoriteDomains}
           activeMetrics={filterState.activeMetrics}
+          availableTags={availableTags}
           onFavoriteToggle={handleToggleFavorite}
+          onTagsChange={handleDomainTagsChange}
           onDomainClick={handleDomainClick}
         />
 

@@ -43,6 +43,13 @@
   text-overflow: ellipsis;
 }
 
+.headerActions {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  flex-shrink: 0;
+}
+
 .favoriteBtn {
   background: none;
   border: none;
@@ -67,6 +74,89 @@
   color: var(--yellow600);
 }
 
+/* Tag Menu */
+.tagMenuContainer {
+  position: relative;
+}
+
+.tagBtn {
+  background: none;
+  border: none;
+  cursor: pointer;
+  font-size: 14px;
+  padding: 0;
+  width: 20px;
+  height: 20px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: opacity 0.2s ease;
+  flex-shrink: 0;
+}
+
+.tagBtn:hover {
+  opacity: 0.7;
+}
+
+.tagMenu {
+  position: absolute;
+  top: 100%;
+  right: 0;
+  margin-top: 4px;
+  background: var(--base0);
+  border: 1px solid var(--base400);
+  border-radius: 6px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  z-index: 10;
+  min-width: 160px;
+  max-width: 200px;
+}
+
+.tagMenuHeader {
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--base700);
+  padding: 8px 10px 6px;
+  border-bottom: 1px solid var(--base200);
+}
+
+.tagMenuList {
+  padding: 4px;
+  max-height: 200px;
+  overflow-y: auto;
+}
+
+.tagMenuItem {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 8px;
+  cursor: pointer;
+  border-radius: 4px;
+  transition: background 0.2s ease;
+  font-size: 12px;
+  color: var(--base900);
+}
+
+.tagMenuItem:hover {
+  background: var(--base100);
+}
+
+.tagMenuItem input[type='checkbox'] {
+  cursor: pointer;
+  width: 14px;
+  height: 14px;
+  margin: 0;
+  flex-shrink: 0;
+}
+
+.tagMenuItem span {
+  flex: 1;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
 /* Chart */
 .chartContainer {
   flex: 1;
@@ -79,8 +169,9 @@
 .metrics {
   display: flex;
   flex-wrap: wrap;
-  gap: 6px; /* CUSTOM: Reduced gap for tighter layout */
+  gap: 4px 8px; /* CUSTOM: Horizontal gap for spacing, vertical gap for wrapping */
   align-items: center;
+  overflow: hidden; /* CUSTOM: Prevent overflow */
 }
 
 .metric {
@@ -88,24 +179,48 @@
   align-items: center;
   gap: 3px; /* CUSTOM: Reduced gap between icon and value */
   font-size: 11px; /* CUSTOM: Reduced from 12px */
+  flex-shrink: 1; /* CUSTOM: Allow shrinking if needed */
+  min-width: 0; /* CUSTOM: Enable text truncation */
 }
 
 .metricIcon {
-  color: var(--base600);
   flex-shrink: 0;
   width: 12px; /* CUSTOM: Fixed icon size */
   height: 12px;
+}
+
+/* Icon colors matching chart lines */
+.metricIcon.pageviews {
+  color: hsl(210, 100%, 60%);
+}
+
+.metricIcon.visits {
+  color: hsl(280, 100%, 65%);
+}
+
+.metricIcon.visitors {
+  color: hsl(25, 100%, 60%);
+}
+
+.metricIcon.bounces {
+  color: hsl(0, 85%, 60%);
+}
+
+.metricIcon.avgTime {
+  color: hsl(160, 70%, 50%);
 }
 
 .metricValue {
   font-weight: 600;
   color: var(--base900);
   font-size: 11px; /* CUSTOM: Reduced from default */
+  white-space: nowrap; /* CUSTOM: Prevent wrapping of values */
 }
 
 .change {
   font-size: 10px; /* CUSTOM: Reduced from 11px */
   font-weight: 500;
+  white-space: nowrap; /* CUSTOM: Prevent wrapping */
 }
 
 .change.positive {
@@ -135,34 +250,6 @@
   color: var(--base700);
   border-radius: 3px;
   font-weight: 500;
-}
-
-/* Realtime */
-.realtime {
-  position: absolute;
-  top: 12px;
-  right: 40px;
-  font-size: 11px;
-  color: var(--base700);
-  display: flex;
-  align-items: center;
-  gap: 4px;
-}
-
-.realtimeDot {
-  color: var(--green600);
-  font-size: 8px;
-  animation: pulse 2s ease-in-out infinite;
-}
-
-@keyframes pulse {
-  0%,
-  100% {
-    opacity: 1;
-  }
-  50% {
-    opacity: 0.5;
-  }
 }
 
 /* Responsive */

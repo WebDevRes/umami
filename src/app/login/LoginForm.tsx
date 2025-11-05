@@ -47,7 +47,7 @@ export function LoginForm() {
             name="username"
             rules={{ required: formatMessage(labels.required) }}
           >
-            <TextField autoComplete="off" />
+            <TextField autoComplete="off" defaultValue="" />
           </FormInput>
         </FormRow>
         <FormRow label={formatMessage(labels.password)}>
@@ -56,7 +56,7 @@ export function LoginForm() {
             name="password"
             rules={{ required: formatMessage(labels.required) }}
           >
-            <PasswordField />
+            <PasswordField defaultValue="" />
           </FormInput>
         </FormRow>
         <FormButtons>

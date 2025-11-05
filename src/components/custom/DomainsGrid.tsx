@@ -8,7 +8,9 @@ export interface DomainsGridProps {
   domains: DomainMetrics[];
   favorites: DomainMetrics[];
   activeMetrics: MetricType[];
+  availableTags?: string[];
   onFavoriteToggle: (id: string) => void;
+  onTagsChange?: (domainId: string, tags: string[]) => void;
   onDomainClick: (id: string) => void;
 }
 
@@ -28,7 +30,9 @@ export function DomainsGrid({
   domains,
   favorites,
   activeMetrics,
+  availableTags,
   onFavoriteToggle,
+  onTagsChange,
   onDomainClick,
 }: DomainsGridProps) {
   const containerRef = useRef<HTMLDivElement>(null);
@@ -82,13 +86,23 @@ export function DomainsGrid({
           <DomainCard
             domain={domain}
             activeMetrics={activeMetrics}
+            availableTags={availableTags}
             onFavoriteToggle={onFavoriteToggle}
+            onTagsChange={onTagsChange}
             onClick={onDomainClick}
           />
         </div>
       );
     },
-    [domains, activeMetrics, columnCount, onFavoriteToggle, onDomainClick],
+    [
+      domains,
+      activeMetrics,
+      availableTags,
+      columnCount,
+      onFavoriteToggle,
+      onTagsChange,
+      onDomainClick,
+    ],
   );
 
   return (
@@ -108,7 +122,9 @@ export function DomainsGrid({
                 key={domain.id}
                 domain={domain}
                 activeMetrics={activeMetrics}
+                availableTags={availableTags}
                 onFavoriteToggle={onFavoriteToggle}
+                onTagsChange={onTagsChange}
                 onClick={onDomainClick}
               />
             ))}

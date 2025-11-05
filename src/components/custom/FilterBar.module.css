@@ -25,9 +25,9 @@
 /* Select */
 .select {
   padding: 8px 12px;
-  border: 1px solid var(--base300);
+  border: 1px solid var(--base400); /* CUSTOM: Increased from base300 for better contrast */
   border-radius: 6px;
-  background: var(--base0);
+  background: var(--base100); /* CUSTOM: Changed from base0 for better visibility */
   color: var(--base900);
   font-size: 13px;
   cursor: pointer;
@@ -35,12 +35,14 @@
 }
 
 .select:hover {
-  border-color: var(--base400);
+  border-color: var(--base500); /* CUSTOM: Increased from base400 */
+  background: var(--base200); /* CUSTOM: Add hover state */
 }
 
 .select:focus {
   outline: none;
   border-color: var(--primary400);
+  background: var(--base0); /* CUSTOM: Lighter when focused */
 }
 
 /* Search */

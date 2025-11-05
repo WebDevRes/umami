@@ -27,7 +27,16 @@
       "Bash(git reset:*)",
       "Bash(npm run dev:*)",
       "Bash(ls:*)",
-      "Bash(taskkill:*)"
+      "Bash(taskkill:*)",
+      "Bash(docker --version:*)",
+      "Bash(docker logs:*)",
+      "Bash(docker inspect:*)",
+      "Bash(netstat:*)",
+      "Bash(findstr:*)",
+      "Bash(docker start:*)",
+      "Bash(docker-compose down:*)",
+      "Bash(docker-compose build:*)",
+      "Bash(npm view:*)"
     ],
     "deny": [],
     "ask": []

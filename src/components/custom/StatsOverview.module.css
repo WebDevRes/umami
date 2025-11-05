@@ -1,15 +1,15 @@
 .container {
-  padding: 24px;
+  padding: 16px; /* CUSTOM: Reduced from 24px */
   background: var(--base50);
   border-radius: 8px;
-  margin-bottom: 24px;
+  margin-bottom: 16px; /* CUSTOM: Reduced from 24px */
 }
 
 .stats {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-  gap: 24px;
-  margin-bottom: 24px;
+  gap: 16px; /* CUSTOM: Reduced from 24px */
+  margin-bottom: 16px; /* CUSTOM: Reduced from 24px */
 }
 
 .stat {

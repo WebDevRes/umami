@@ -3,13 +3,11 @@ import { Icons } from 'react-basics';
 import Icons2 from '@/components/icons';
 import { FilterState } from '@/lib/custom/types';
 import { useDebounce } from '@/lib/custom/hooks';
-import RealtimeIndicator from './RealtimeIndicator';
 import styles from './FilterBar.module.css';
 
 export interface FilterBarProps {
   filters: FilterState;
   availableTags: string[];
-  realtimeTotal: number;
   onFiltersChange: (filters: Partial<FilterState>) => void;
   onExport?: () => void;
 }
@@ -29,13 +27,7 @@ const SORT_OPTIONS = [
   { value: 'pageviews_desc', label: 'Most Pageviews' },
 ] as const;
 
-export function FilterBar({
-  filters,
-  availableTags,
-  realtimeTotal,
-  onFiltersChange,
-  onExport,
-}: FilterBarProps) {
+export function FilterBar({ filters, availableTags, onFiltersChange, onExport }: FilterBarProps) {
   // Local state for immediate UI feedback
   const [searchInput, setSearchInput] = useState(filters.searchQuery);
 
@@ -131,9 +123,6 @@ export function FilterBar({
 
         {/* Spacer */}
         <div className={styles.spacer} />
-
-        {/* Realtime indicator */}
-        <RealtimeIndicator count={realtimeTotal} />
 
         {/* Export button */}
         {onExport && (

@@ -1,4 +1,4 @@
-import { memo, useCallback } from 'react';
+import { memo, useCallback, useState, useRef, useEffect } from 'react';
 import Icons from '@/components/icons';
 import { DomainMetrics, MetricType } from '@/lib/custom/types';
 import Favicon from '@/components/common/Favicon';
@@ -8,7 +8,9 @@ import styles from './DomainCard.module.css';
 export interface DomainCardProps {
   domain: DomainMetrics;
   activeMetrics: MetricType[];
+  availableTags?: string[];
   onFavoriteToggle: (id: string) => void;
+  onTagsChange?: (domainId: string, tags: string[]) => void;
   onClick: (id: string) => void;
 }
 
@@ -39,9 +41,14 @@ function formatTime(seconds: number): string {
 function DomainCardComponent({
   domain,
   activeMetrics,
+  availableTags = [],
   onFavoriteToggle,
+  onTagsChange,
   onClick,
 }: DomainCardProps) {
+  const [showTagMenu, setShowTagMenu] = useState(false);
+  const tagMenuRef = useRef<HTMLDivElement>(null);
+
   const handleFavoriteClick = useCallback(
     (e: React.MouseEvent) => {
       e.stopPropagation();
@@ -53,6 +60,39 @@ function DomainCardComponent({
   const handleCardClick = useCallback(() => {
     onClick(domain.id);
   }, [domain.id, onClick]);
+
+  const handleTagButtonClick = useCallback((e: React.MouseEvent) => {
+    e.stopPropagation();
+    setShowTagMenu(prev => !prev);
+  }, []);
+
+  const handleTagToggle = useCallback(
+    (tag: string, e: React.MouseEvent) => {
+      e.stopPropagation();
+      if (!onTagsChange) return;
+
+      const newTags = domain.tags.includes(tag)
+        ? domain.tags.filter(t => t !== tag)
+        : [...domain.tags, tag];
+
+      onTagsChange(domain.id, newTags);
+    },
+    [domain.id, domain.tags, onTagsChange],
+  );
+
+  // Close tag menu when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (tagMenuRef.current && !tagMenuRef.current.contains(event.target as Node)) {
+        setShowTagMenu(false);
+      }
+    };
+
+    if (showTagMenu) {
+      document.addEventListener('mousedown', handleClickOutside);
+      return () => document.removeEventListener('mousedown', handleClickOutside);
+    }
+  }, [showTagMenu]);
 
   const renderMetric = useCallback(
     (metric: MetricType) => {
@@ -76,7 +116,7 @@ function DomainCardComponent({
 
       return (
         <div key={metric} className={styles.metric}>
-          <Icon className={styles.metricIcon} width={14} height={14} />
+          <Icon className={`${styles.metricIcon} ${styles[metric]}`} width={14} height={14} />
           <span className={styles.metricValue}>{displayValue}</span>
           {value.change !== 0 && (
             <span className={`${styles.change} ${changeClass}`}>
@@ -100,13 +140,45 @@ function DomainCardComponent({
             {domain.name || domain.domain}
           </span>
         </div>
-        <button
-          className={`${styles.favoriteBtn} ${domain.isFavorite ? styles.active : ''}`}
-          onClick={handleFavoriteClick}
-          aria-label="Toggle favorite"
-        >
-          {domain.isFavorite ? '★' : '☆'}
-        </button>
+        <div className={styles.headerActions}>
+          {availableTags.length > 0 && onTagsChange && (
+            <div className={styles.tagMenuContainer} ref={tagMenuRef}>
+              <button
+                className={styles.tagBtn}
+                onClick={handleTagButtonClick}
+                aria-label="Manage tags"
+                title="Manage tags"
+              >
+                🏷️
+              </button>
+              {showTagMenu && (
+                <div className={styles.tagMenu}>
+                  <div className={styles.tagMenuHeader}>Assign Tags</div>
+                  <div className={styles.tagMenuList}>
+                    {availableTags.map(tag => (
+                      <label key={tag} className={styles.tagMenuItem}>
+                        <input
+                          type="checkbox"
+                          checked={domain.tags.includes(tag)}
+                          onChange={e => handleTagToggle(tag, e as any)}
+                          onClick={e => e.stopPropagation()}
+                        />
+                        <span>{tag}</span>
+                      </label>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </div>
+          )}
+          <button
+            className={`${styles.favoriteBtn} ${domain.isFavorite ? styles.active : ''}`}
+            onClick={handleFavoriteClick}
+            aria-label="Toggle favorite"
+          >
+            {domain.isFavorite ? '★' : '☆'}
+          </button>
+        </div>
       </div>
 
       {/* Chart */}
@@ -125,14 +197,6 @@ function DomainCardComponent({
               {tag}
             </span>
           ))}
-        </div>
-      )}
-
-      {/* Realtime indicator */}
-      {domain.realtimeVisitors > 0 && (
-        <div className={styles.realtime}>
-          <span className={styles.realtimeDot}>●</span>
-          {domain.realtimeVisitors} active
         </div>
       )}
     </div>
