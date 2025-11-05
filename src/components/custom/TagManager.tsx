@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { Icons } from 'react-basics';
+import Icons2 from '@/components/icons';
 import styles from './TagManager.module.css';
 
 export interface TagManagerProps {
@@ -35,7 +36,7 @@ export function TagManager({ availableTags, onCreateTag, onDeleteTag }: TagManag
   if (!isOpen) {
     return (
       <button className={styles.openBtn} onClick={() => setIsOpen(true)}>
-        <Icons.Gear width={16} height={16} />
+        <Icons2.Gear width={16} height={16} />
         Manage Tags
       </button>
     );

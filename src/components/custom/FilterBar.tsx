@@ -1,5 +1,8 @@
+import { useState, useEffect } from 'react';
 import { Icons } from 'react-basics';
+import Icons2 from '@/components/icons';
 import { FilterState } from '@/lib/custom/types';
+import { useDebounce } from '@/lib/custom/hooks';
 import RealtimeIndicator from './RealtimeIndicator';
 import styles from './FilterBar.module.css';
 
@@ -33,8 +36,33 @@ export function FilterBar({
   onFiltersChange,
   onExport,
 }: FilterBarProps) {
+  // Local state for immediate UI feedback
+  const [searchInput, setSearchInput] = useState(filters.searchQuery);
+
+  // Debounced search value to reduce re-renders
+  const debouncedSearch = useDebounce(searchInput, 300);
+
+  // Update parent state only when debounced value changes
+  useEffect(() => {
+    if (debouncedSearch !== filters.searchQuery) {
+      onFiltersChange({ searchQuery: debouncedSearch });
+    }
+  }, [debouncedSearch, filters.searchQuery, onFiltersChange]);
+
+  // Sync local state when external filter changes (e.g., clear button)
+  useEffect(() => {
+    if (filters.searchQuery !== searchInput) {
+      setSearchInput(filters.searchQuery);
+    }
+  }, [filters.searchQuery]);
+
   const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    onFiltersChange({ searchQuery: e.target.value });
+    setSearchInput(e.target.value);
+  };
+
+  const handleSearchClear = () => {
+    setSearchInput('');
+    onFiltersChange({ searchQuery: '' });
   };
 
   const handleTagToggle = (tag: string) => {
@@ -73,14 +101,14 @@ export function FilterBar({
           <input
             type="text"
             placeholder="Search domains..."
-            value={filters.searchQuery}
+            value={searchInput}
             onChange={handleSearchChange}
             className={styles.searchInput}
           />
-          {filters.searchQuery && (
+          {searchInput && (
             <button
               className={styles.clearBtn}
-              onClick={() => onFiltersChange({ searchQuery: '' })}
+              onClick={handleSearchClear}
               aria-label="Clear search"
             >
               <Icons.Close width={14} height={14} />
@@ -110,7 +138,7 @@ export function FilterBar({
         {/* Export button */}
         {onExport && (
           <button className={styles.button} onClick={onExport} title="Export data">
-            <Icons.Export width={16} height={16} />
+            <Icons2.Export width={16} height={16} />
             <span>Export</span>
           </button>
         )}

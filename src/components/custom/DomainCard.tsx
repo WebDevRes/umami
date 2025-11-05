@@ -1,4 +1,5 @@
-import { Icons } from 'react-basics';
+import { memo, useCallback } from 'react';
+import Icons from '@/components/icons';
 import { DomainMetrics, MetricType } from '@/lib/custom/types';
 import Favicon from '@/components/common/Favicon';
 import MiniChart from './MiniChart';
@@ -35,48 +36,59 @@ function formatTime(seconds: number): string {
   return `${minutes}:${secs.toString().padStart(2, '0')}`;
 }
 
-export function DomainCard({ domain, activeMetrics, onFavoriteToggle, onClick }: DomainCardProps) {
-  const handleFavoriteClick = (e: React.MouseEvent) => {
-    e.stopPropagation();
-    onFavoriteToggle(domain.id);
-  };
+function DomainCardComponent({
+  domain,
+  activeMetrics,
+  onFavoriteToggle,
+  onClick,
+}: DomainCardProps) {
+  const handleFavoriteClick = useCallback(
+    (e: React.MouseEvent) => {
+      e.stopPropagation();
+      onFavoriteToggle(domain.id);
+    },
+    [domain.id, onFavoriteToggle],
+  );
 
-  const handleCardClick = () => {
+  const handleCardClick = useCallback(() => {
     onClick(domain.id);
-  };
+  }, [domain.id, onClick]);
 
-  const renderMetric = (metric: MetricType) => {
-    const value = domain[metric];
-    const Icon = Icons[METRIC_ICONS[metric]];
+  const renderMetric = useCallback(
+    (metric: MetricType) => {
+      const value = domain[metric];
+      const Icon = Icons[METRIC_ICONS[metric]];
 
-    // Format value based on metric type
-    let displayValue: string;
-    if (metric === 'avgTime') {
-      displayValue = formatTime(value.current);
-    } else if (metric === 'bounces') {
-      displayValue = `${value.current.toFixed(1)}%`;
-    } else {
-      displayValue = formatNumber(value.current);
-    }
+      // Format value based on metric type
+      let displayValue: string;
+      if (metric === 'avgTime') {
+        displayValue = formatTime(value.current);
+      } else if (metric === 'bounces') {
+        displayValue = `${value.current.toFixed(1)}%`;
+      } else {
+        displayValue = formatNumber(value.current);
+      }
 
-    // Change indicator
-    const changeIcon = value.change > 0 ? '↑' : value.change < 0 ? '↓' : '';
-    const changeClass =
-      value.change > 0 ? styles.positive : value.change < 0 ? styles.negative : styles.neutral;
+      // Change indicator
+      const changeIcon = value.change > 0 ? '↑' : value.change < 0 ? '↓' : '';
+      const changeClass =
+        value.change > 0 ? styles.positive : value.change < 0 ? styles.negative : styles.neutral;
 
-    return (
-      <div key={metric} className={styles.metric}>
-        <Icon className={styles.metricIcon} width={14} height={14} />
-        <span className={styles.metricValue}>{displayValue}</span>
-        {value.change !== 0 && (
-          <span className={`${styles.change} ${changeClass}`}>
-            {changeIcon}
-            {Math.abs(value.change).toFixed(0)}%
-          </span>
-        )}
-      </div>
-    );
-  };
+      return (
+        <div key={metric} className={styles.metric}>
+          <Icon className={styles.metricIcon} width={14} height={14} />
+          <span className={styles.metricValue}>{displayValue}</span>
+          {value.change !== 0 && (
+            <span className={`${styles.change} ${changeClass}`}>
+              {changeIcon}
+              {Math.abs(value.change).toFixed(0)}%
+            </span>
+          )}
+        </div>
+      );
+    },
+    [domain],
+  );
 
   return (
     <div className={styles.card} onClick={handleCardClick}>
@@ -126,5 +138,8 @@ export function DomainCard({ domain, activeMetrics, onFavoriteToggle, onClick }:
     </div>
   );
 }
+
+// Memoize component to prevent unnecessary re-renders in virtualized grid
+export const DomainCard = memo(DomainCardComponent);
 
 export default DomainCard;

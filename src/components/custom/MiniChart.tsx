@@ -1,5 +1,4 @@
 import { useRef, useEffect, useMemo } from 'react';
-import ChartJS from 'chart.js/auto';
 import { TimeSeriesDataPoint, MetricType } from '@/lib/custom/types';
 import styles from './MiniChart.module.css';
 
@@ -29,7 +28,7 @@ const METRIC_LABELS: Record<MetricType, string> = {
 
 export function MiniChart({ data, activeMetrics, height = 80, className }: MiniChartProps) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
-  const chartRef = useRef<ChartJS | null>(null);
+  const chartRef = useRef<any>(null);
 
   const chartData = useMemo(() => {
     if (!data || data.length === 0) return null;
@@ -69,92 +68,108 @@ export function MiniChart({ data, activeMetrics, height = 80, className }: MiniC
     const ctx = canvasRef.current.getContext('2d');
     if (!ctx) return;
 
-    // Destroy existing chart
-    if (chartRef.current) {
-      chartRef.current.destroy();
-    }
+    // Lazy load Chart.js (code splitting)
+    let isMounted = true;
 
-    // Create new chart
-    chartRef.current = new ChartJS(ctx, {
-      type: 'line',
-      data: chartData,
-      options: {
-        responsive: true,
-        maintainAspectRatio: false,
-        animation: {
-          duration: 300,
-        },
-        interaction: {
-          mode: 'index',
-          intersect: false,
-        },
-        scales: {
-          x: {
-            display: false, // Hide x-axis for compact view
-            grid: {
-              display: false,
-            },
+    const initChart = async () => {
+      const ChartModule = await import('chart.js/auto');
+      const ChartJSClass = ChartModule.default;
+
+      if (!isMounted || !canvasRef.current) return;
+
+      // Destroy existing chart
+      if (chartRef.current) {
+        chartRef.current.destroy();
+      }
+
+      // Create new chart
+      chartRef.current = new ChartJSClass(ctx, {
+        type: 'line',
+        data: chartData,
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          animation: {
+            duration: 0, // Disable animations for better performance with 500+ cards
           },
-          y: {
-            display: false, // Hide y-axis for compact view
-            grid: {
-              display: false,
-            },
-            beginAtZero: true,
-          },
-        },
-        plugins: {
-          legend: {
-            display: false, // No legend in mini chart
-          },
-          tooltip: {
-            enabled: true,
+          interaction: {
             mode: 'index',
             intersect: false,
-            backgroundColor: 'rgba(0, 0, 0, 0.8)',
-            titleColor: '#fff',
-            bodyColor: '#fff',
-            borderColor: 'rgba(255, 255, 255, 0.1)',
-            borderWidth: 1,
-            padding: 8,
-            displayColors: true,
-            callbacks: {
-              title: tooltipItems => {
-                // Format date
-                const date = tooltipItems[0]?.label;
-                if (!date) return '';
-                return new Date(date).toLocaleDateString('en-US', {
-                  month: 'short',
-                  day: 'numeric',
-                });
+          },
+          // Performance optimization
+          parsing: false,
+          normalized: true,
+          scales: {
+            x: {
+              display: false, // Hide x-axis for compact view
+              grid: {
+                display: false,
               },
-              label: context => {
-                const label = context.dataset.label || '';
-                const value = context.parsed.y;
+            },
+            y: {
+              display: false, // Hide y-axis for compact view
+              grid: {
+                display: false,
+              },
+              beginAtZero: true,
+            },
+          },
+          plugins: {
+            legend: {
+              display: false, // No legend in mini chart
+            },
+            tooltip: {
+              enabled: true,
+              mode: 'index',
+              intersect: false,
+              backgroundColor: 'rgba(0, 0, 0, 0.8)',
+              titleColor: '#fff',
+              bodyColor: '#fff',
+              borderColor: 'rgba(255, 255, 255, 0.1)',
+              borderWidth: 1,
+              padding: 8,
+              displayColors: true,
+              callbacks: {
+                title: tooltipItems => {
+                  // Format date
+                  const date = tooltipItems[0]?.label;
+                  if (!date) return '';
+                  return new Date(date).toLocaleDateString('en-US', {
+                    month: 'short',
+                    day: 'numeric',
+                  });
+                },
+                label: context => {
+                  const label = context.dataset.label || '';
+                  const value = context.parsed.y;
 
-                // Format value
-                let formatted: string;
-                if (label === 'Avg. Time') {
-                  // Display minutes
-                  formatted = `${value.toFixed(1)} min`;
-                } else if (label === 'Bounces') {
-                  formatted = `${value.toFixed(1)}%`;
-                } else if (value >= 1000) {
-                  formatted = `${(value / 1000).toFixed(1)}k`;
-                } else {
-                  formatted = value.toFixed(0);
-                }
+                  // Format value
+                  let formatted: string;
+                  if (label === 'Avg. Time') {
+                    // Display minutes
+                    formatted = `${value.toFixed(1)} min`;
+                  } else if (label === 'Bounces') {
+                    formatted = `${value.toFixed(1)}%`;
+                  } else if (value >= 1000) {
+                    formatted = `${(value / 1000).toFixed(1)}k`;
+                  } else {
+                    formatted = value.toFixed(0);
+                  }
 
-                return `${label}: ${formatted}`;
+                  return `${label}: ${formatted}`;
+                },
               },
             },
           },
         },
-      },
-    });
+      });
+    };
+
+    initChart();
 
     // Cleanup
     return () => {
+      isMounted = false;
       if (chartRef.current) {
         chartRef.current.destroy();
         chartRef.current = null;

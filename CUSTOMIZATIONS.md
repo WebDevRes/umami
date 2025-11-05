@@ -79,6 +79,8 @@ code...
 
 **Files Modified:**
 - `src/styles/variables.css:7-31` - Added custom CSS variables for metrics colors and change indicators
+- `src/app/(main)/NavBar.tsx:23-30,32-41` - Added Custom Analytics link to navigation (desktop + mobile)
+- `public/intl/messages/en-US.json:254-259` - Added "label.custom-analytics" translation
 
 **Purpose:**
 Foundation for custom analytics dashboard with improved UX. Clean, compact design inspired by SEOgets. Isolated implementation for minimal merge conflicts.
@@ -98,10 +100,94 @@ Foundation for custom analytics dashboard with improved UX. Clean, compact desig
 - Can be removed without affecting upstream code
 - Variables in `variables.css` isolated in CUSTOM comment blocks
 
+**Phase 5 - Performance & Optimization:** ✅
+- `src/lib/custom/hooks.ts` - Custom React hooks for optimization
+  - `useDebounce<T>` - Debounce hook for search input (300ms)
+  - `usePersistedMetrics` - LocalStorage hook for active metrics
+  - `usePersistedDateRange` - LocalStorage hook for date range
+  - `usePersistedSort` - LocalStorage hook for sort option
+  - `usePersistedFavorites` - LocalStorage hook for favorites
+  - `useWindowSize` - Window dimensions hook
+  - `useThrottle<T>` - Throttle hook for scroll/resize events
+
+- Updated `src/lib/custom/utils.ts`:
+  - Added localStorage utility with error handling
+  - Storage keys constants (STORAGE_KEYS)
+  - SSR-safe (typeof window check)
+
+**Performance Optimizations:**
+1. **Component Memoization:**
+   - `DomainCard.tsx` - Memoized with React.memo + useCallback
+   - `DomainsGrid.tsx` - Memoized Cell component + cellData
+   - Prevents unnecessary re-renders in virtualized grid
+
+2. **Chart Performance:**
+   - `MiniChart.tsx` - Disabled animations (duration: 0) for 500+ cards
+   - Added Chart.js options: `parsing: false`, `normalized: true`
+   - Lazy loading with dynamic import (code splitting)
+   - Canvas-based rendering (better than SVG for large datasets)
+
+3. **Search Optimization:**
+   - `FilterBar.tsx` - Debounced search input (300ms delay)
+   - Local state for immediate UI feedback
+   - Reduced re-renders during typing
+
+4. **State Optimization:**
+   - useMemo for filtered/sorted data
+   - useCallback for event handlers
+   - LocalStorage for user preferences persistence
+
+5. **Bundle Optimization:**
+   - Code splitting for Chart.js (lazy import)
+   - Tree shaking for unused utilities
+   - Dynamic imports in useEffect
+
+**Phase 6 - Main Page Integration:** ✅
+- `src/app/(main)/custom-analytics/page.tsx` - Next.js route with metadata
+- `src/app/(main)/custom-analytics/CustomAnalyticsPage.tsx` - Main page component
+- `src/app/(main)/custom-analytics/CustomAnalyticsPage.module.css` - Page-level styles
+
+**Main Page Features:**
+1. **State Management:**
+   - FilterState (date range, search, sort, tags, active metrics)
+   - Domain state (favorites, tags)
+   - Aggregated metrics calculation (dynamic based on filters)
+   - Tag management (create, delete, assign)
+
+2. **Component Integration:**
+   - FilterBar → StatsOverview → MetricToggle → DomainsGrid → TagManager
+   - Props correctly mapped to component interfaces
+   - Callbacks for all user interactions
+   - Virtualized grid with favorites section
+
+3. **Data Flow:**
+   - Mock data generation (generateMockData())
+   - Filter and sort (filterAndSortDomains())
+   - Aggregated metrics (calculateAggregatedMetrics())
+   - Separate favorites from regular domains
+   - Real-time recalculation on state changes
+
+4. **User Interactions:**
+   - Toggle favorites (persists in state)
+   - Search domains (debounced input)
+   - Sort by name/visitors/pageviews
+   - Filter by tags (multi-select)
+   - Change date range (7d/28d/90d/custom)
+   - Toggle metrics visibility (3 active by default)
+   - Export data (CSV - TODO)
+   - Navigate to domain details (TODO)
+
+**Route Access:**
+- URL: `/custom-analytics`
+- Page Title: "Custom Analytics"
+- Client Component (high interactivity)
+
+**Updated Utility Functions:**
+- `src/lib/custom/utils.ts:338-416` - Added filterAndSortDomains() and calculateAggregatedMetrics()
+
 **Next Steps:**
-- Phase 5: Performance optimization and virtualization tuning
-- Phase 6: Main page integration and testing
-- Phase 7: Real API integration
+- Phase 7: Testing and polish
+- Phase 8: Real API integration
 
 ## Known Issues
 

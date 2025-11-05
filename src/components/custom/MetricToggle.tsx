@@ -1,4 +1,4 @@
-import { Icons } from 'react-basics';
+import Icons from '@/components/icons';
 import { MetricType } from '@/lib/custom/types';
 import styles from './MetricToggle.module.css';
 

@@ -282,3 +282,138 @@ export function exportToCSV(domains: DomainMetrics[], filename: string = 'analyt
   link.click();
   document.body.removeChild(link);
 }
+
+/**
+ * LocalStorage utility for custom analytics preferences
+ */
+const STORAGE_PREFIX = 'umami_custom_analytics_';
+
+export const storage = {
+  get<T>(key: string, defaultValue: T): T {
+    if (typeof window === 'undefined') return defaultValue;
+
+    try {
+      const item = window.localStorage.getItem(STORAGE_PREFIX + key);
+      return item ? JSON.parse(item) : defaultValue;
+    } catch (error) {
+      // eslint-disable-next-line no-console
+      console.error('Error reading from localStorage:', error);
+      return defaultValue;
+    }
+  },
+
+  set<T>(key: string, value: T): void {
+    if (typeof window === 'undefined') return;
+
+    try {
+      window.localStorage.setItem(STORAGE_PREFIX + key, JSON.stringify(value));
+    } catch (error) {
+      // eslint-disable-next-line no-console
+      console.error('Error writing to localStorage:', error);
+    }
+  },
+
+  remove(key: string): void {
+    if (typeof window === 'undefined') return;
+
+    try {
+      window.localStorage.removeItem(STORAGE_PREFIX + key);
+    } catch (error) {
+      // eslint-disable-next-line no-console
+      console.error('Error removing from localStorage:', error);
+    }
+  },
+};
+
+/**
+ * Storage keys for preferences
+ */
+export const STORAGE_KEYS = {
+  ACTIVE_METRICS: 'active_metrics',
+  DATE_RANGE: 'date_range',
+  SORT_BY: 'sort_by',
+  FAVORITES: 'favorites',
+} as const;
+
+/**
+ * Filter and sort domains based on filter state
+ */
+export function filterAndSortDomains(
+  domains: DomainMetrics[],
+  filterState: { searchQuery: string; selectedTags: string[]; sortBy: SortOption },
+): DomainMetrics[] {
+  return applyFiltersAndSort(
+    domains,
+    filterState.searchQuery,
+    filterState.selectedTags,
+    filterState.sortBy,
+  );
+}
+
+/**
+ * Calculate aggregated metrics from filtered domains
+ */
+export function calculateAggregatedMetrics(domains: DomainMetrics[]): {
+  pageviews: number;
+  visits: number;
+  visitors: number;
+  realtimeTotal: number;
+  timeSeries: Array<{
+    date: string;
+    pageviews: number;
+    visits: number;
+    visitors: number;
+    bounces: number;
+    avgTime: number;
+  }>;
+} {
+  // Aggregate totals
+  const totals = domains.reduce(
+    (acc, domain) => ({
+      pageviews: acc.pageviews + domain.pageviews.current,
+      visits: acc.visits + domain.visits.current,
+      visitors: acc.visitors + domain.visitors.current,
+      realtimeTotal: acc.realtimeTotal + domain.realtimeVisitors,
+    }),
+    { pageviews: 0, visits: 0, visitors: 0, realtimeTotal: 0 },
+  );
+
+  // Aggregate time series
+  const timeSeriesMap = new Map<
+    string,
+    { pageviews: number; visits: number; visitors: number; bounces: number; avgTime: number }
+  >();
+
+  domains.forEach(domain => {
+    domain.timeSeries.forEach(point => {
+      const existing = timeSeriesMap.get(point.date) || {
+        pageviews: 0,
+        visits: 0,
+        visitors: 0,
+        bounces: 0,
+        avgTime: 0,
+      };
+
+      timeSeriesMap.set(point.date, {
+        pageviews: existing.pageviews + point.pageviews,
+        visits: existing.visits + point.visits,
+        visitors: existing.visitors + point.visitors,
+        bounces: existing.bounces + point.bounces,
+        avgTime: existing.avgTime + point.avgTime,
+      });
+    });
+  });
+
+  // Convert map to sorted array
+  const timeSeries = Array.from(timeSeriesMap.entries())
+    .map(([date, values]) => ({
+      date,
+      ...values,
+    }))
+    .sort((a, b) => a.date.localeCompare(b.date));
+
+  return {
+    ...totals,
+    timeSeries,
+  };
+}

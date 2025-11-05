@@ -24,6 +24,8 @@ export function NavBar() {
     { label: formatMessage(labels.dashboard), url: renderTeamUrl('/dashboard') },
     { label: formatMessage(labels.websites), url: renderTeamUrl('/websites') },
     { label: formatMessage(labels.reports), url: renderTeamUrl('/reports') },
+    // CUSTOM: Added Custom Analytics link
+    { label: formatMessage(labels.customAnalytics), url: renderTeamUrl('/custom-analytics') },
     { label: formatMessage(labels.settings), url: renderTeamUrl('/settings') },
   ].filter(n => n);
 
@@ -31,6 +33,11 @@ export function NavBar() {
     {
       label: formatMessage(labels.dashboard),
       url: renderTeamUrl('/dashboard'),
+    },
+    // CUSTOM: Added Custom Analytics to mobile menu
+    {
+      label: formatMessage(labels.customAnalytics),
+      url: renderTeamUrl('/custom-analytics'),
     },
     !cloudMode && {
       label: formatMessage(labels.settings),

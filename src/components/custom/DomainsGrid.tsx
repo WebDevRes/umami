@@ -1,4 +1,4 @@
-import { useMemo, useRef, useEffect, useState } from 'react';
+import { useMemo, useRef, useEffect, useState, useCallback } from 'react';
 import { FixedSizeGrid as Grid } from 'react-window';
 import { DomainMetrics, MetricType } from '@/lib/custom/types';
 import DomainCard from './DomainCard';
@@ -60,33 +60,36 @@ export function DomainsGrid({
 
   const rowCount = Math.ceil(domains.length / columnCount);
   const gridHeight = Math.min(
-    window.innerHeight - 400, // Leave space for header and filters
+    typeof window !== 'undefined' ? window.innerHeight - 400 : 600, // Leave space for header and filters
     rowCount * (CARD_HEIGHT + CARD_GAP),
   );
 
-  // Render individual cell
-  const Cell = ({ columnIndex, rowIndex, style }: any) => {
-    const index = rowIndex * columnCount + columnIndex;
-    if (index >= domains.length) return null;
+  // Render individual cell (memoized component)
+  const Cell = useCallback(
+    ({ columnIndex, rowIndex, style }: any) => {
+      const index = rowIndex * columnCount + columnIndex;
+      if (index >= domains.length) return null;
 
-    const domain = domains[index];
+      const domain = domains[index];
 
-    return (
-      <div
-        style={{
-          ...style,
-          padding: CARD_GAP / 2,
-        }}
-      >
-        <DomainCard
-          domain={domain}
-          activeMetrics={activeMetrics}
-          onFavoriteToggle={onFavoriteToggle}
-          onClick={onDomainClick}
-        />
-      </div>
-    );
-  };
+      return (
+        <div
+          style={{
+            ...style,
+            padding: CARD_GAP / 2,
+          }}
+        >
+          <DomainCard
+            domain={domain}
+            activeMetrics={activeMetrics}
+            onFavoriteToggle={onFavoriteToggle}
+            onClick={onDomainClick}
+          />
+        </div>
+      );
+    },
+    [domains, activeMetrics, columnCount, onFavoriteToggle, onDomainClick],
+  );
 
   return (
     <div className={styles.container} ref={containerRef}>

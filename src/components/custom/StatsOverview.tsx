@@ -1,5 +1,4 @@
 import { useRef, useEffect, useMemo } from 'react';
-import ChartJS from 'chart.js/auto';
 import { AggregatedMetrics, MetricType } from '@/lib/custom/types';
 import styles from './StatsOverview.module.css';
 
@@ -38,7 +37,7 @@ function formatNumber(num: number): string {
 
 export function StatsOverview({ data, activeMetrics, height = 250 }: StatsOverviewProps) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
-  const chartRef = useRef<ChartJS | null>(null);
+  const chartRef = useRef<any>(null);
 
   const chartData = useMemo(() => {
     if (!data.timeSeries || data.timeSeries.length === 0) return null;
@@ -78,110 +77,123 @@ export function StatsOverview({ data, activeMetrics, height = 250 }: StatsOvervi
     const ctx = canvasRef.current.getContext('2d');
     if (!ctx) return;
 
-    if (chartRef.current) {
-      chartRef.current.destroy();
-    }
+    // Lazy load Chart.js (code splitting)
+    let isMounted = true;
 
-    chartRef.current = new ChartJS(ctx, {
-      type: 'line',
-      data: chartData,
-      options: {
-        responsive: true,
-        maintainAspectRatio: false,
-        animation: {
-          duration: 500,
-        },
-        interaction: {
-          mode: 'index',
-          intersect: false,
-        },
-        scales: {
-          x: {
-            display: true,
-            grid: {
-              display: true,
-              color: 'rgba(0, 0, 0, 0.05)',
-            },
-            ticks: {
-              maxTicksLimit: 8,
-              callback: function (value) {
-                const date = this.getLabelForValue(value as number);
-                return new Date(date).toLocaleDateString('en-US', {
-                  month: 'short',
-                  day: 'numeric',
-                });
-              },
-            },
+    const initChart = async () => {
+      const ChartModule = await import('chart.js/auto');
+      const ChartJSClass = ChartModule.default;
+
+      if (!isMounted || !canvasRef.current) return;
+
+      if (chartRef.current) {
+        chartRef.current.destroy();
+      }
+
+      chartRef.current = new ChartJSClass(ctx, {
+        type: 'line',
+        data: chartData,
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          animation: {
+            duration: 500,
           },
-          y: {
-            display: true,
-            grid: {
-              display: true,
-              color: 'rgba(0, 0, 0, 0.05)',
-            },
-            beginAtZero: true,
-            ticks: {
-              callback: function (value) {
-                return formatNumber(value as number);
-              },
-            },
-          },
-        },
-        plugins: {
-          legend: {
-            display: true,
-            position: 'top',
-            align: 'end',
-            labels: {
-              usePointStyle: true,
-              boxWidth: 6,
-              boxHeight: 6,
-              padding: 15,
-            },
-          },
-          tooltip: {
-            enabled: true,
+          interaction: {
             mode: 'index',
             intersect: false,
-            backgroundColor: 'rgba(0, 0, 0, 0.8)',
-            titleColor: '#fff',
-            bodyColor: '#fff',
-            borderColor: 'rgba(255, 255, 255, 0.1)',
-            borderWidth: 1,
-            padding: 12,
-            displayColors: true,
-            callbacks: {
-              title: tooltipItems => {
-                const date = tooltipItems[0]?.label;
-                if (!date) return '';
-                return new Date(date).toLocaleDateString('en-US', {
-                  weekday: 'short',
-                  month: 'short',
-                  day: 'numeric',
-                });
+          },
+          scales: {
+            x: {
+              display: true,
+              grid: {
+                display: true,
+                color: 'rgba(0, 0, 0, 0.05)',
               },
-              label: context => {
-                const label = context.dataset.label || '';
-                const value = context.parsed.y;
+              ticks: {
+                maxTicksLimit: 8,
+                callback: function (value) {
+                  const date = this.getLabelForValue(value as number);
+                  return new Date(date).toLocaleDateString('en-US', {
+                    month: 'short',
+                    day: 'numeric',
+                  });
+                },
+              },
+            },
+            y: {
+              display: true,
+              grid: {
+                display: true,
+                color: 'rgba(0, 0, 0, 0.05)',
+              },
+              beginAtZero: true,
+              ticks: {
+                callback: function (value) {
+                  return formatNumber(value as number);
+                },
+              },
+            },
+          },
+          plugins: {
+            legend: {
+              display: true,
+              position: 'top',
+              align: 'end',
+              labels: {
+                usePointStyle: true,
+                boxWidth: 6,
+                boxHeight: 6,
+                padding: 15,
+              },
+            },
+            tooltip: {
+              enabled: true,
+              mode: 'index',
+              intersect: false,
+              backgroundColor: 'rgba(0, 0, 0, 0.8)',
+              titleColor: '#fff',
+              bodyColor: '#fff',
+              borderColor: 'rgba(255, 255, 255, 0.1)',
+              borderWidth: 1,
+              padding: 12,
+              displayColors: true,
+              callbacks: {
+                title: tooltipItems => {
+                  const date = tooltipItems[0]?.label;
+                  if (!date) return '';
+                  return new Date(date).toLocaleDateString('en-US', {
+                    weekday: 'short',
+                    month: 'short',
+                    day: 'numeric',
+                  });
+                },
+                label: context => {
+                  const label = context.dataset.label || '';
+                  const value = context.parsed.y;
 
-                let formatted: string;
-                if (label === 'Avg. Time') {
-                  formatted = `${value.toFixed(1)} min`;
-                } else if (label === 'Bounces') {
-                  formatted = `${value.toFixed(1)}%`;
-                } else {
-                  formatted = formatNumber(value);
-                }
+                  let formatted: string;
+                  if (label === 'Avg. Time') {
+                    formatted = `${value.toFixed(1)} min`;
+                  } else if (label === 'Bounces') {
+                    formatted = `${value.toFixed(1)}%`;
+                  } else {
+                    formatted = formatNumber(value);
+                  }
 
-                return `${label}: ${formatted}`;
+                  return `${label}: ${formatted}`;
+                },
               },
             },
           },
         },
-      },
-    });
+      });
+    };
+
+    initChart();
 
     return () => {
+      isMounted = false;
       if (chartRef.current) {
         chartRef.current.destroy();
         chartRef.current = null;

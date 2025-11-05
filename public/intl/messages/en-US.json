@@ -251,6 +251,12 @@
       "value": "Custom range"
     }
   ],
+  "label.custom-analytics": [
+    {
+      "type": 0,
+      "value": "Custom Analytics"
+    }
+  ],
   "label.dashboard": [
     {
       "type": 0,
