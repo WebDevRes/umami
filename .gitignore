@@ -29,6 +29,8 @@ node_modules
 *.log
 .vscode
 .tool-versions
+nul
+Пример.md
 
 # debug
 npm-debug.log*
