@@ -5,6 +5,7 @@ import {
   LinearScale,
   PointElement,
   LineElement,
+  LineController,
   Title,
   Tooltip,
   Filler,
@@ -19,6 +20,7 @@ ChartJS.register(
   LinearScale,
   PointElement,
   LineElement,
+  LineController,
   Title,
   Tooltip,
   Filler,
@@ -59,11 +61,10 @@ export function MiniChart({ data, activeMetrics, height = 80, className }: MiniC
     const labels = data.map(d => d.date);
     const datasets = activeMetrics.map(metric => {
       const colors = METRIC_COLORS[metric];
-      const values = data.map(d => {
-        if (metric === 'avgTime') {
-          return d[metric] / 60; // Convert seconds to minutes for display
-        }
-        return d[metric];
+      const values = data.map((d, index) => {
+        const value = metric === 'avgTime' ? d[metric] / 60 : d[metric];
+        // CUSTOM: Return {x, y} format for better Chart.js compatibility
+        return { x: index, y: value };
       });
 
       return {
@@ -110,9 +111,6 @@ export function MiniChart({ data, activeMetrics, height = 80, className }: MiniC
           mode: 'index',
           intersect: false,
         },
-        // Performance optimization
-        parsing: false,
-        normalized: true,
         scales: {
           x: {
             display: false, // Hide x-axis for compact view

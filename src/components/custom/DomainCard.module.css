@@ -79,29 +79,32 @@
 .metrics {
   display: flex;
   flex-wrap: wrap;
-  gap: 8px;
+  gap: 6px; /* CUSTOM: Reduced gap for tighter layout */
   align-items: center;
 }
 
 .metric {
   display: flex;
   align-items: center;
-  gap: 4px;
-  font-size: 12px;
+  gap: 3px; /* CUSTOM: Reduced gap between icon and value */
+  font-size: 11px; /* CUSTOM: Reduced from 12px */
 }
 
 .metricIcon {
   color: var(--base600);
   flex-shrink: 0;
+  width: 12px; /* CUSTOM: Fixed icon size */
+  height: 12px;
 }
 
 .metricValue {
   font-weight: 600;
   color: var(--base900);
+  font-size: 11px; /* CUSTOM: Reduced from default */
 }
 
 .change {
-  font-size: 11px;
+  font-size: 10px; /* CUSTOM: Reduced from 11px */
   font-weight: 500;
 }
 

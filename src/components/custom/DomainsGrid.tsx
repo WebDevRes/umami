@@ -12,8 +12,8 @@ export interface DomainsGridProps {
   onDomainClick: (id: string) => void;
 }
 
-const CARD_HEIGHT = 154; // 9.64rem in pixels
-const CARD_GAP = 16;
+const CARD_HEIGHT = 192; // 12rem in pixels (updated to match DomainCard height)
+const CARD_GAP = 20; // CUSTOM: Increased from 16 to 20 for better spacing
 const MIN_CARD_WIDTH = 280;
 
 function getGridDimensions(containerWidth: number) {

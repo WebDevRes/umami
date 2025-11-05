@@ -191,4 +191,46 @@ Foundation for custom analytics dashboard with improved UX. Clean, compact desig
 
 ## Known Issues
 
-- None yet
+### 2025-11-05 - Chart.js Data Format Fix ✅ RESOLVED
+**Files:**
+- `src/components/custom/MiniChart.tsx:1-28` - Added `LineController` import and registration
+- `src/components/custom/MiniChart.tsx:64-67` - Changed data format to `{x, y}` objects
+- `src/components/custom/MiniChart.tsx:114` - Removed `parsing: false` option
+
+**Issue:**
+1. Error "line" is not a registered controller in Chart.js
+2. Charts rendering but empty (no data displayed)
+
+**Root Cause:**
+- Missing LineController registration
+- Data format incompatibility: `parsing: false` requires `{x, y}` format, but we passed plain arrays
+
+**Fix:**
+1. Added `LineController` to Chart.js imports and registration
+2. Changed dataset values to `{x: index, y: value}` format for better compatibility
+3. Removed conflicting `parsing: false` option
+
+**Status:** ✅ Fixed - Build successful, application running, charts displaying data correctly
+
+---
+
+### 2025-11-05 - UI Spacing & Typography Fix ✅ RESOLVED
+**Files:**
+- `src/components/custom/DomainCard.module.css:79-109` - Reduced font sizes and gaps
+- `src/components/custom/DomainsGrid.module.css:19` - Increased grid gap from 16px to 20px
+- `src/components/custom/DomainsGrid.tsx:15-16` - Updated CARD_HEIGHT to 192px and CARD_GAP to 20px
+
+**Issue:**
+1. Cards appearing too close together (touching)
+2. Metric text overflowing/not fitting properly
+
+**Fix:**
+1. **Grid spacing:** Increased gap between cards from 16px to 20px
+2. **Typography:**
+   - Reduced metric font size from 12px to 11px
+   - Reduced change indicator from 11px to 10px
+   - Reduced gaps between metric elements (8px → 6px, 4px → 3px)
+3. **Layout:** Fixed metric icon size to 12x12px for consistency
+4. **Card height:** Updated constant from 154px to 192px (matches CSS 12rem)
+
+**Status:** ✅ Fixed - Better spacing, text fits properly, cleaner layout

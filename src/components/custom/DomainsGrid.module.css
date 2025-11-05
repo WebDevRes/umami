@@ -16,7 +16,7 @@
 
 .favoritesGrid {
   display: grid;
-  gap: 16px;
+  gap: 20px; /* CUSTOM: Increased gap to prevent cards from touching */
   margin-bottom: 16px;
 }
 
