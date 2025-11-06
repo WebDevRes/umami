@@ -154,6 +154,7 @@ export const labels = defineMessages({
   cities: { id: 'label.cities', defaultMessage: 'Cities' },
   regions: { id: 'label.regions', defaultMessage: 'Regions' },
   reports: { id: 'label.reports', defaultMessage: 'Reports' },
+  customAnalytics: { id: 'label.custom-analytics', defaultMessage: 'Custom Analytics' },
   eventData: { id: 'label.event-data', defaultMessage: 'Event data' },
   sessionData: { id: 'label.session-data', defaultMessage: 'Session data' },
   funnel: { id: 'label.funnel', defaultMessage: 'Funnel' },

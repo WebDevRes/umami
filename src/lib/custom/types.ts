@@ -44,6 +44,8 @@ export interface AggregatedMetrics {
   pageviews: number;
   visits: number;
   visitors: number;
+  bounceRate: number; // Percentage (0-100)
+  avgTime: number; // Average time in seconds
   realtimeTotal: number;
 
   // Time series for aggregated chart

@@ -7,10 +7,11 @@ export interface TagManagerProps {
   availableTags: string[];
   onCreateTag: (tag: string) => void;
   onDeleteTag: (tag: string) => void;
+  onClose?: () => void;
 }
 
-export function TagManager({ availableTags, onCreateTag, onDeleteTag }: TagManagerProps) {
-  const [isOpen, setIsOpen] = useState(false);
+export function TagManager({ availableTags, onCreateTag, onDeleteTag, onClose }: TagManagerProps) {
+  const [isOpen, setIsOpen] = useState(!onClose); // If onClose provided, start open (modal mode)
   const [newTag, setNewTag] = useState('');
 
   const handleSubmit = (e: React.FormEvent) => {
@@ -47,7 +48,11 @@ export function TagManager({ availableTags, onCreateTag, onDeleteTag }: TagManag
       <div className={styles.modalContent}>
         <div className={styles.modalHeader}>
           <h2 className={styles.modalTitle}>Manage Tags</h2>
-          <button className={styles.closeBtn} onClick={() => setIsOpen(false)} aria-label="Close">
+          <button
+            className={styles.closeBtn}
+            onClick={() => (onClose ? onClose() : setIsOpen(false))}
+            aria-label="Close"
+          >
             <Icons.Close width={20} height={20} />
           </button>
         </div>

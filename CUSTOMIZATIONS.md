@@ -234,3 +234,142 @@ Foundation for custom analytics dashboard with improved UX. Clean, compact desig
 4. **Card height:** Updated constant from 154px to 192px (matches CSS 12rem)
 
 **Status:** ✅ Fixed - Better spacing, text fits properly, cleaner layout
+
+---
+
+### 2025-11-05 - UX Improvement: Clickable Metric Cards & Relocated Tags ✅ COMPLETE
+**Files Added:**
+- `src/components/custom/TagsSection.tsx` - New component combining tags and Tag Manager
+- `src/components/custom/TagsSection.module.css` - Styling for tags section
+
+**Files Modified:**
+- `src/components/custom/StatsOverview.tsx:5-10,39-44,210-267` - Made metric cards clickable/toggleable
+  - Added `onMetricToggle` prop
+  - Converted stat divs to buttons with active states
+  - Added 5th card for Total Bounces and Avg. Time
+- `src/components/custom/StatsOverview.module.css:21-46` - Added button styles for clickable cards
+  - `.statButton` - Base button styling with hover effects
+  - `.statActive` - Active state with primary color border
+- `src/app/(main)/custom-analytics/CustomAnalyticsPage.tsx:4-6,58-87,129-148` - Updated page layout
+  - Removed `MetricToggle` and `TagManager` components
+  - Added `TagsSection` component
+  - Replaced `handleMetricsChange` with `handleMetricToggle`
+  - Added `handleTagToggle` and `handleClearTags` handlers
+- `src/components/custom/FilterBar.tsx:8-12,29,54-121` - Removed tags from filter bar
+  - Removed `availableTags` prop
+  - Removed tag toggle/clear handlers
+  - Removed tags bottom row UI
+- `src/components/custom/TagManager.tsx:6-11,13-14,51-54` - Added modal mode support
+  - Added optional `onClose` prop for modal usage
+  - Auto-open when `onClose` is provided
+  - Updated close handler to use `onClose` callback
+
+**Purpose:**
+Improved UX by making metric cards interactive toggle buttons (replacing bottom metrics bar) and relocating tags section below the chart with integrated Tag Manager button.
+
+**New Layout:**
+1. Filter Bar (date, search, sort, export)
+2. **Clickable Metric Cards** (5 cards: Pageviews, Visits, Visitors, Bounces, Avg. Time)
+3. Large Chart (showing active metrics)
+4. **Tags Section** (tags + Manage Tags button) - replaces old MetricToggle position
+5. Domains Grid
+
+**Design Benefits:**
+- Cleaner, more intuitive interface
+- Metrics and aggregated stats combined in one component
+- Tags closer to domain grid context
+- Tag Manager easily accessible next to tags
+- Reduced UI clutter
+
+**Merge Strategy:**
+- New isolated component (`TagsSection`)
+- Point modifications to existing components
+- No core framework changes
+- Can be reverted by restoring old layout
+
+**Bug Fixes:**
+- `src/components/custom/StatsOverview.tsx:251-263` - Added undefined checks for `bounceRate` and `avgTime`
+- `src/app/(main)/custom-analytics/CustomAnalyticsPage.tsx:51-54` - Moved `handleFilterChange` declaration before handlers that depend on it (fixed ReferenceError)
+
+---
+
+### 2025-11-05 - Date Range Filter Fix ✅ COMPLETE
+**Files Modified:**
+- `src/lib/custom/types.ts:43-53` - Added `bounceRate` and `avgTime` fields to `AggregatedMetrics` interface
+- `src/lib/custom/mockData.ts:86-87,154,184-203` - Generate 90 days of data for all date ranges
+  - Changed `generateTimeSeries(28)` to `generateTimeSeries(90)`
+  - Updated `generateAggregatedMetrics()` to calculate metrics from all days
+  - Added `bounceRate` and `avgTime` to aggregated totals
+- `src/lib/custom/utils.ts:227-236,367-471` - Added date range filtering
+  - New function: `filterTimeSeriesByDateRange()` - Filter time series by selected period
+  - Updated `calculateAggregatedMetrics()` to accept `dateRange` parameter
+  - Filter time series before aggregation
+  - Calculate totals from filtered time series instead of domain.current values
+- `src/app/(main)/custom-analytics/CustomAnalyticsPage.tsx:46-49` - Pass `dateRange` to `calculateAggregatedMetrics()`
+  - Added `filterState.dateRange` to useMemo dependencies
+
+**Issues Fixed:**
+1. **Date range selector not working:** Graph and totals were always showing same data regardless of period selection
+2. **Unclear metric calculations:** Total stats were incorrectly calculated from last 7 days average instead of selected period
+
+**Root Cause:**
+- Mock data generated only 28 days
+- Date range filter was not passed to aggregation function
+- Totals calculated from `domain.current` (7-day averages) instead of actual time series for selected period
+
+**Solution:**
+1. Generate 90 days of mock data to support all date ranges (7d, 28d, 90d)
+2. Filter time series by selected date range before aggregation
+3. Calculate totals from filtered time series (sum of all days in period)
+4. Added `bounceRate` and `avgTime` to aggregated metrics display
+
+**Expected Behavior:**
+- 7 days: Shows last 7 days of data, totals calculated from 7 days
+- 28 days: Shows last 28 days of data, totals calculated from 28 days
+- 90 days: Shows last 90 days of data, totals calculated from 90 days
+- Graph updates automatically when date range changes
+- Total stats reflect the selected period (not hardcoded 7 days)
+
+**Status:** ✅ Fixed - Date range selector now works correctly, totals calculated from selected period
+
+---
+
+### 2025-11-05 - Domain Cards Date Range Sync ✅ COMPLETE
+**Files Modified:**
+- `src/lib/custom/utils.ts:238-337` - Added `recalculateDomainMetricsForDateRange()` function
+  - Recalculates domain metrics (pageviews, visits, visitors, bounces, avgTime) based on selected date range
+  - Calculates "previous period" metrics for comparison (e.g., 7d selected → compare with previous 7 days)
+  - Updates percentage changes between current and previous periods
+  - Filters timeSeries to match selected period
+- `src/app/(main)/custom-analytics/CustomAnalyticsPage.tsx:8-13,36-45` - Apply date range to domain cards
+  - Import `recalculateDomainMetricsForDateRange` function
+  - Map all domains through recalculation before filtering/sorting
+  - Domain cards now update when date range changes
+
+**Issue:**
+Domain cards (DomainCard components) were showing hardcoded 7-day metrics regardless of selected date range filter. Only aggregated stats were updating when user changed period.
+
+**Solution:**
+Created `recalculateDomainMetricsForDateRange()` function that:
+1. Takes domain data and selected date range (7d/28d/90d)
+2. Filters timeSeries to selected period
+3. Calculates average metrics for current period
+4. Calculates average metrics for previous period (same length)
+5. Computes percentage changes
+6. Returns updated domain object with recalculated values
+
+Applied in CustomAnalyticsPage before filtering:
+```typescript
+const recalculatedDomains = domains.map(domain =>
+  recalculateDomainMetricsForDateRange(domain, filterState.dateRange)
+);
+```
+
+**Expected Behavior:**
+- User selects "7 days" → domain cards show 7-day averages vs previous 7 days
+- User selects "28 days" → domain cards show 28-day averages vs previous 28 days
+- User selects "90 days" → domain cards show 90-day averages vs previous 90 days
+- Changes (arrows and percentages) reflect comparison with previous period
+- Mini charts in cards show only data for selected period
+
+**Status:** ✅ Complete - Domain cards now sync with date range filter, all metrics update consistently

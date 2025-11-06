@@ -83,7 +83,8 @@ function generateDomainMetrics(
   domainConfig: { domain: string; name: string; tags: string[] },
   index: number,
 ): DomainMetrics {
-  const timeSeries = generateTimeSeries(28);
+  // Generate 90 days of data to support all date ranges
+  const timeSeries = generateTimeSeries(90);
 
   // Calculate current metrics from time series (last 7 days average)
   const last7Days = timeSeries.slice(-7);
@@ -151,7 +152,7 @@ function generateAggregatedMetrics(domains: DomainMetrics[]) {
   const allTimeSeries: TimeSeriesDataPoint[] = [];
 
   // Aggregate time series from all domains
-  const daysCount = domains[0]?.timeSeries.length || 28;
+  const daysCount = domains[0]?.timeSeries.length || 90;
 
   for (let i = 0; i < daysCount; i++) {
     const dateStr = domains[0].timeSeries[i].date;
@@ -181,13 +182,23 @@ function generateAggregatedMetrics(domains: DomainMetrics[]) {
     allTimeSeries.push(aggregated);
   }
 
-  // Calculate totals from last 7 days
-  const last7Days = allTimeSeries.slice(-7);
+  // Calculate totals from all days (will be filtered by dateRange later)
+  const totalPageviews = allTimeSeries.reduce((sum, d) => sum + d.pageviews, 0);
+  const totalVisits = allTimeSeries.reduce((sum, d) => sum + d.visits, 0);
+  const totalVisitors = allTimeSeries.reduce((sum, d) => sum + d.visitors, 0);
+  const totalBounces = allTimeSeries.reduce((sum, d) => sum + d.bounces, 0);
+  const avgTime = Math.round(
+    allTimeSeries.reduce((sum, d) => sum + d.avgTime, 0) / allTimeSeries.length,
+  );
+
+  const bounceRate = totalVisits > 0 ? (totalBounces / totalVisits) * 100 : 0;
 
   return {
-    pageviews: last7Days.reduce((sum, d) => sum + d.pageviews, 0),
-    visits: last7Days.reduce((sum, d) => sum + d.visits, 0),
-    visitors: last7Days.reduce((sum, d) => sum + d.visitors, 0),
+    pageviews: totalPageviews,
+    visits: totalVisits,
+    visitors: totalVisitors,
+    bounceRate: Math.round(bounceRate * 10) / 10,
+    avgTime,
     realtimeTotal: domains.reduce((sum, d) => sum + d.realtimeVisitors, 0),
     timeSeries: allTimeSeries,
   };

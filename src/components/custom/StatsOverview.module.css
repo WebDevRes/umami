@@ -18,6 +18,33 @@
   gap: 4px;
 }
 
+.statButton {
+  background: var(--base100);
+  border: 2px solid transparent;
+  border-radius: 6px;
+  padding: 12px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  text-align: left;
+}
+
+.statButton:hover:not(:disabled) {
+  background: var(--base200);
+  border-color: var(--base300);
+  transform: translateY(-2px);
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+}
+
+.statButton:disabled {
+  cursor: default;
+}
+
+.statActive {
+  background: var(--base200);
+  border-color: var(--primary500);
+  box-shadow: 0 0 0 1px var(--primary500);
+}
+
 .label {
   font-size: 13px;
   color: var(--base600);

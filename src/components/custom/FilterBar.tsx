@@ -7,7 +7,6 @@ import styles from './FilterBar.module.css';
 
 export interface FilterBarProps {
   filters: FilterState;
-  availableTags: string[];
   onFiltersChange: (filters: Partial<FilterState>) => void;
   onExport?: () => void;
 }
@@ -27,7 +26,7 @@ const SORT_OPTIONS = [
   { value: 'pageviews_desc', label: 'Most Pageviews' },
 ] as const;
 
-export function FilterBar({ filters, availableTags, onFiltersChange, onExport }: FilterBarProps) {
+export function FilterBar({ filters, onFiltersChange, onExport }: FilterBarProps) {
   // Local state for immediate UI feedback
   const [searchInput, setSearchInput] = useState(filters.searchQuery);
 
@@ -55,19 +54,6 @@ export function FilterBar({ filters, availableTags, onFiltersChange, onExport }:
   const handleSearchClear = () => {
     setSearchInput('');
     onFiltersChange({ searchQuery: '' });
-  };
-
-  const handleTagToggle = (tag: string) => {
-    const isSelected = filters.selectedTags.includes(tag);
-    const newTags = isSelected
-      ? filters.selectedTags.filter(t => t !== tag)
-      : [...filters.selectedTags, tag];
-
-    onFiltersChange({ selectedTags: newTags });
-  };
-
-  const clearTags = () => {
-    onFiltersChange({ selectedTags: [] });
   };
 
   return (
@@ -132,35 +118,6 @@ export function FilterBar({ filters, availableTags, onFiltersChange, onExport }:
           </button>
         )}
       </div>
-
-      {/* Bottom row: tags filter */}
-      {availableTags.length > 0 && (
-        <div className={styles.bottomRow}>
-          <span className={styles.tagsLabel}>Tags:</span>
-          <div className={styles.tags}>
-            {availableTags.map(tag => {
-              const isSelected = filters.selectedTags.includes(tag);
-              return (
-                <button
-                  key={tag}
-                  className={`${styles.tagPill} ${isSelected ? styles.tagPillActive : ''}`}
-                  onClick={() => handleTagToggle(tag)}
-                >
-                  {tag}
-                  {isSelected && (
-                    <Icons.Close width={12} height={12} className={styles.tagPillClose} />
-                  )}
-                </button>
-              );
-            })}
-          </div>
-          {filters.selectedTags.length > 0 && (
-            <button className={styles.clearTagsBtn} onClick={clearTags}>
-              Clear all
-            </button>
-          )}
-        </div>
-      )}
     </div>
   );
 }

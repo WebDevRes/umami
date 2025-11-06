@@ -1,5 +1,5 @@
 .card {
-  height: 12rem; /* 192px - increased for better chart visibility */
+  min-height: 12rem; /* CUSTOM: Changed to min-height to prevent content overflow */
   background: var(--base50);
   border: 1px solid var(--base300);
   border-radius: 8px;
@@ -171,7 +171,7 @@
   flex-wrap: wrap;
   gap: 4px 8px; /* CUSTOM: Horizontal gap for spacing, vertical gap for wrapping */
   align-items: center;
-  overflow: hidden; /* CUSTOM: Prevent overflow */
+  min-height: 20px; /* CUSTOM: Ensure metrics section is visible */
 }
 
 .metric {

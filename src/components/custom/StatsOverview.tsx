@@ -5,6 +5,7 @@ import styles from './StatsOverview.module.css';
 export interface StatsOverviewProps {
   data: AggregatedMetrics;
   activeMetrics: MetricType[];
+  onMetricToggle?: (metric: MetricType) => void;
   height?: number;
 }
 
@@ -35,7 +36,12 @@ function formatNumber(num: number): string {
   return num.toFixed(0);
 }
 
-export function StatsOverview({ data, activeMetrics, height = 250 }: StatsOverviewProps) {
+export function StatsOverview({
+  data,
+  activeMetrics,
+  onMetricToggle,
+  height = 250,
+}: StatsOverviewProps) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const chartRef = useRef<any>(null);
 
@@ -201,27 +207,71 @@ export function StatsOverview({ data, activeMetrics, height = 250 }: StatsOvervi
     };
   }, [chartData]);
 
+  const handleCardClick = (metric: MetricType) => {
+    if (onMetricToggle) {
+      onMetricToggle(metric);
+    }
+  };
+
+  const isMetricActive = (metric: MetricType) => activeMetrics.includes(metric);
+
   return (
     <div className={styles.container}>
       <div className={styles.stats}>
-        <div className={styles.stat}>
+        <button
+          className={`${styles.stat} ${styles.statButton} ${
+            isMetricActive('pageviews') ? styles.statActive : ''
+          }`}
+          onClick={() => handleCardClick('pageviews')}
+          disabled={!onMetricToggle}
+        >
           <div className={styles.label}>Total Pageviews</div>
           <div className={styles.value}>{formatNumber(data.pageviews)}</div>
-        </div>
-        <div className={styles.stat}>
+        </button>
+        <button
+          className={`${styles.stat} ${styles.statButton} ${
+            isMetricActive('visits') ? styles.statActive : ''
+          }`}
+          onClick={() => handleCardClick('visits')}
+          disabled={!onMetricToggle}
+        >
           <div className={styles.label}>Total Visits</div>
           <div className={styles.value}>{formatNumber(data.visits)}</div>
-        </div>
-        <div className={styles.stat}>
+        </button>
+        <button
+          className={`${styles.stat} ${styles.statButton} ${
+            isMetricActive('visitors') ? styles.statActive : ''
+          }`}
+          onClick={() => handleCardClick('visitors')}
+          disabled={!onMetricToggle}
+        >
           <div className={styles.label}>Total Visitors</div>
           <div className={styles.value}>{formatNumber(data.visitors)}</div>
-        </div>
-        <div className={styles.stat}>
-          <div className={styles.label}>Active Now</div>
+        </button>
+        <button
+          className={`${styles.stat} ${styles.statButton} ${
+            isMetricActive('bounces') ? styles.statActive : ''
+          }`}
+          onClick={() => handleCardClick('bounces')}
+          disabled={!onMetricToggle}
+        >
+          <div className={styles.label}>Total Bounces</div>
           <div className={styles.value}>
-            <span className={styles.live}>●</span> {formatNumber(data.realtimeTotal)}
+            {data.bounceRate !== undefined ? `${data.bounceRate.toFixed(1)}%` : '0.0%'}
           </div>
-        </div>
+        </button>
+        <button
+          className={`${styles.stat} ${styles.statButton} ${
+            isMetricActive('avgTime') ? styles.statActive : ''
+          }`}
+          onClick={() => handleCardClick('avgTime')}
+          disabled={!onMetricToggle}
+        >
+          <div className={styles.label}>Avg. Time</div>
+          <div className={styles.value}>
+            {data.avgTime !== undefined ? `${(data.avgTime / 60).toFixed(1)} min` : '0.0 min'}
+          </div>
+        </button>
       </div>
       <div className={styles.chart} style={{ height: `${height}px` }}>
         <canvas ref={canvasRef} />

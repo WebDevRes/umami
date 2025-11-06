@@ -225,6 +225,118 @@ export function getDateRangeDays(range: '7d' | '28d' | '90d' | 'custom'): number
 }
 
 /**
+ * Filter time series by date range
+ */
+export function filterTimeSeriesByDateRange(
+  timeSeries: Array<{ date: string; [key: string]: any }>,
+  dateRange: '7d' | '28d' | '90d' | 'custom',
+): Array<{ date: string; [key: string]: any }> {
+  const days = getDateRangeDays(dateRange);
+  return timeSeries.slice(-days);
+}
+
+/**
+ * Recalculate domain metrics based on selected date range
+ */
+export function recalculateDomainMetricsForDateRange(
+  domain: DomainMetrics,
+  dateRange: '7d' | '28d' | '90d' | 'custom',
+): DomainMetrics {
+  const days = getDateRangeDays(dateRange);
+  const filteredTimeSeries = domain.timeSeries.slice(-days);
+
+  if (filteredTimeSeries.length === 0) {
+    return domain;
+  }
+
+  // Calculate current metrics from filtered time series
+  const currentPageviews = Math.round(
+    filteredTimeSeries.reduce((sum, d) => sum + d.pageviews, 0) / filteredTimeSeries.length,
+  );
+  const currentVisits = Math.round(
+    filteredTimeSeries.reduce((sum, d) => sum + d.visits, 0) / filteredTimeSeries.length,
+  );
+  const currentVisitors = Math.round(
+    filteredTimeSeries.reduce((sum, d) => sum + d.visitors, 0) / filteredTimeSeries.length,
+  );
+  const currentBounces = Math.round(
+    filteredTimeSeries.reduce((sum, d) => sum + d.bounces, 0) / filteredTimeSeries.length,
+  );
+  const currentAvgTime = Math.round(
+    filteredTimeSeries.reduce((sum, d) => sum + d.avgTime, 0) / filteredTimeSeries.length,
+  );
+
+  // Calculate previous period metrics (same length before current period)
+  const previousTimeSeries = domain.timeSeries.slice(-(days * 2), -days);
+
+  let previousPageviews = currentPageviews;
+  let previousVisits = currentVisits;
+  let previousVisitors = currentVisitors;
+  let previousBounces = currentBounces;
+  let previousAvgTime = currentAvgTime;
+
+  if (previousTimeSeries.length > 0) {
+    previousPageviews = Math.round(
+      previousTimeSeries.reduce((sum, d) => sum + d.pageviews, 0) / previousTimeSeries.length,
+    );
+    previousVisits = Math.round(
+      previousTimeSeries.reduce((sum, d) => sum + d.visits, 0) / previousTimeSeries.length,
+    );
+    previousVisitors = Math.round(
+      previousTimeSeries.reduce((sum, d) => sum + d.visitors, 0) / previousTimeSeries.length,
+    );
+    previousBounces = Math.round(
+      previousTimeSeries.reduce((sum, d) => sum + d.bounces, 0) / previousTimeSeries.length,
+    );
+    previousAvgTime = Math.round(
+      previousTimeSeries.reduce((sum, d) => sum + d.avgTime, 0) / previousTimeSeries.length,
+    );
+  }
+
+  // Calculate percentage changes
+  const pageviewsChange =
+    previousPageviews > 0 ? ((currentPageviews - previousPageviews) / previousPageviews) * 100 : 0;
+  const visitsChange =
+    previousVisits > 0 ? ((currentVisits - previousVisits) / previousVisits) * 100 : 0;
+  const visitorsChange =
+    previousVisitors > 0 ? ((currentVisitors - previousVisitors) / previousVisitors) * 100 : 0;
+  const bouncesChange =
+    previousBounces > 0 ? ((currentBounces - previousBounces) / previousBounces) * 100 : 0;
+  const avgTimeChange =
+    previousAvgTime > 0 ? ((currentAvgTime - previousAvgTime) / previousAvgTime) * 100 : 0;
+
+  return {
+    ...domain,
+    pageviews: {
+      current: currentPageviews,
+      previous: previousPageviews,
+      change: Math.round(pageviewsChange * 10) / 10,
+    },
+    visits: {
+      current: currentVisits,
+      previous: previousVisits,
+      change: Math.round(visitsChange * 10) / 10,
+    },
+    visitors: {
+      current: currentVisitors,
+      previous: previousVisitors,
+      change: Math.round(visitorsChange * 10) / 10,
+    },
+    bounces: {
+      current: currentBounces,
+      previous: previousBounces,
+      change: Math.round(bouncesChange * 10) / 10,
+    },
+    avgTime: {
+      current: currentAvgTime,
+      previous: previousAvgTime,
+      change: Math.round(avgTimeChange * 10) / 10,
+    },
+    timeSeries: filteredTimeSeries,
+  };
+}
+
+/**
  * Format date for display
  */
 export function formatDate(date: Date | string): string {
@@ -353,10 +465,15 @@ export function filterAndSortDomains(
 /**
  * Calculate aggregated metrics from filtered domains
  */
-export function calculateAggregatedMetrics(domains: DomainMetrics[]): {
+export function calculateAggregatedMetrics(
+  domains: DomainMetrics[],
+  dateRange?: '7d' | '28d' | '90d' | 'custom',
+): {
   pageviews: number;
   visits: number;
   visitors: number;
+  bounceRate: number;
+  avgTime: number;
   realtimeTotal: number;
   timeSeries: Array<{
     date: string;
@@ -367,16 +484,17 @@ export function calculateAggregatedMetrics(domains: DomainMetrics[]): {
     avgTime: number;
   }>;
 } {
-  // Aggregate totals
-  const totals = domains.reduce(
-    (acc, domain) => ({
-      pageviews: acc.pageviews + domain.pageviews.current,
-      visits: acc.visits + domain.visits.current,
-      visitors: acc.visitors + domain.visitors.current,
-      realtimeTotal: acc.realtimeTotal + domain.realtimeVisitors,
-    }),
-    { pageviews: 0, visits: 0, visitors: 0, realtimeTotal: 0 },
-  );
+  if (domains.length === 0) {
+    return {
+      pageviews: 0,
+      visits: 0,
+      visitors: 0,
+      bounceRate: 0,
+      avgTime: 0,
+      realtimeTotal: 0,
+      timeSeries: [],
+    };
+  }
 
   // Aggregate time series
   const timeSeriesMap = new Map<
@@ -385,7 +503,12 @@ export function calculateAggregatedMetrics(domains: DomainMetrics[]): {
   >();
 
   domains.forEach(domain => {
-    domain.timeSeries.forEach(point => {
+    // Filter time series by date range if provided
+    const filteredTimeSeries = dateRange
+      ? filterTimeSeriesByDateRange(domain.timeSeries, dateRange)
+      : domain.timeSeries;
+
+    filteredTimeSeries.forEach(point => {
       const existing = timeSeriesMap.get(point.date) || {
         pageviews: 0,
         visits: 0,
@@ -404,16 +527,46 @@ export function calculateAggregatedMetrics(domains: DomainMetrics[]): {
     });
   });
 
-  // Convert map to sorted array
+  // Convert map to sorted array and calculate average avgTime per day
   const timeSeries = Array.from(timeSeriesMap.entries())
     .map(([date, values]) => ({
       date,
-      ...values,
+      pageviews: values.pageviews,
+      visits: values.visits,
+      visitors: values.visitors,
+      bounces: values.bounces,
+      avgTime: Math.round(values.avgTime / domains.length), // Average time per day
     }))
     .sort((a, b) => a.date.localeCompare(b.date));
 
+  // Aggregate totals from time series
+  const totals = timeSeries.reduce(
+    (acc, point) => ({
+      pageviews: acc.pageviews + point.pageviews,
+      visits: acc.visits + point.visits,
+      visitors: acc.visitors + point.visitors,
+      bounces: acc.bounces + point.bounces,
+      avgTime: acc.avgTime + point.avgTime,
+    }),
+    { pageviews: 0, visits: 0, visitors: 0, bounces: 0, avgTime: 0 },
+  );
+
+  // Calculate average bounce rate (bounces / visits * 100)
+  const bounceRate = totals.visits > 0 ? (totals.bounces / totals.visits) * 100 : 0;
+
+  // Calculate average time
+  const avgTime = timeSeries.length > 0 ? totals.avgTime / timeSeries.length : 0;
+
+  // Get realtime total
+  const realtimeTotal = domains.reduce((sum, d) => sum + d.realtimeVisitors, 0);
+
   return {
-    ...totals,
+    pageviews: totals.pageviews,
+    visits: totals.visits,
+    visitors: totals.visitors,
+    bounceRate: Math.round(bounceRate * 10) / 10, // Round to 1 decimal
+    avgTime: Math.round(avgTime),
+    realtimeTotal,
     timeSeries,
   };
 }

@@ -2,12 +2,15 @@
 import { useState, useMemo, useCallback } from 'react';
 import PageHeader from '@/components/layout/PageHeader';
 import FilterBar from '@/components/custom/FilterBar';
-import MetricToggle from '@/components/custom/MetricToggle';
 import StatsOverview from '@/components/custom/StatsOverview';
+import TagsSection from '@/components/custom/TagsSection';
 import DomainsGrid from '@/components/custom/DomainsGrid';
-import TagManager from '@/components/custom/TagManager';
 import { generateMockData } from '@/lib/custom/mockData';
-import { filterAndSortDomains, calculateAggregatedMetrics } from '@/lib/custom/utils';
+import {
+  filterAndSortDomains,
+  calculateAggregatedMetrics,
+  recalculateDomainMetricsForDateRange,
+} from '@/lib/custom/utils';
 import type { DomainMetrics, MetricType, FilterState, DashboardData } from '@/lib/custom/types';
 import styles from './CustomAnalyticsPage.module.css';
 
@@ -30,9 +33,15 @@ export function CustomAnalyticsPage() {
   // Domain management state (for favorites and tags)
   const [domains, setDomains] = useState<DomainMetrics[]>(mockData.domains);
 
-  // Filter and sort domains
+  // Recalculate domain metrics based on selected date range, then filter and sort
   const filteredDomains = useMemo(() => {
-    return filterAndSortDomains(domains, filterState);
+    // First, recalculate metrics for each domain based on dateRange
+    const recalculatedDomains = domains.map(domain =>
+      recalculateDomainMetricsForDateRange(domain, filterState.dateRange),
+    );
+
+    // Then apply filters and sorting
+    return filterAndSortDomains(recalculatedDomains, filterState);
   }, [domains, filterState]);
 
   // Separate favorites and regular domains
@@ -44,10 +53,15 @@ export function CustomAnalyticsPage() {
     return filteredDomains.filter(d => !d.isFavorite);
   }, [filteredDomains]);
 
-  // Recalculate aggregated metrics based on filtered domains
+  // Recalculate aggregated metrics based on filtered domains and date range
   const aggregatedMetrics = useMemo(() => {
-    return calculateAggregatedMetrics(filteredDomains);
-  }, [filteredDomains]);
+    return calculateAggregatedMetrics(filteredDomains, filterState.dateRange);
+  }, [filteredDomains, filterState.dateRange]);
+
+  // Handler: Update filter state (must be declared first as other handlers depend on it)
+  const handleFilterChange = useCallback((updates: Partial<FilterState>) => {
+    setFilterState(prev => ({ ...prev, ...updates }));
+  }, []);
 
   // Handler: Toggle favorite
   const handleToggleFavorite = useCallback((domainId: string) => {
@@ -56,15 +70,36 @@ export function CustomAnalyticsPage() {
     );
   }, []);
 
-  // Handler: Update active metrics
-  const handleMetricsChange = useCallback((metrics: MetricType[]) => {
-    setFilterState(prev => ({ ...prev, activeMetrics: metrics }));
+  // Handler: Toggle single metric
+  const handleMetricToggle = useCallback((metric: MetricType) => {
+    setFilterState(prev => {
+      const isActive = prev.activeMetrics.includes(metric);
+      if (isActive) {
+        // Don't allow removing all metrics - at least one must be active
+        if (prev.activeMetrics.length === 1) return prev;
+        return { ...prev, activeMetrics: prev.activeMetrics.filter(m => m !== metric) };
+      } else {
+        return { ...prev, activeMetrics: [...prev.activeMetrics, metric] };
+      }
+    });
   }, []);
 
-  // Handler: Update filter state
-  const handleFilterChange = useCallback((updates: Partial<FilterState>) => {
-    setFilterState(prev => ({ ...prev, ...updates }));
-  }, []);
+  // Handler: Tag toggle
+  const handleTagToggle = useCallback(
+    (tag: string) => {
+      const isSelected = filterState.selectedTags.includes(tag);
+      const newTags = isSelected
+        ? filterState.selectedTags.filter(t => t !== tag)
+        : [...filterState.selectedTags, tag];
+      handleFilterChange({ selectedTags: newTags });
+    },
+    [filterState.selectedTags, handleFilterChange],
+  );
+
+  // Handler: Clear tags
+  const handleClearTags = useCallback(() => {
+    handleFilterChange({ selectedTags: [] });
+  }, [handleFilterChange]);
 
   // Handler: Create tag
   const handleCreateTag = useCallback((tag: string) => {
@@ -101,19 +136,29 @@ export function CustomAnalyticsPage() {
       <PageHeader title="Custom Analytics" />
 
       <div className={styles.content}>
-        {/* Filter Bar */}
+        {/* Filter Bar (without tags) */}
         <FilterBar
           filters={filterState}
-          availableTags={availableTags}
           onFiltersChange={handleFilterChange}
           onExport={handleExport}
         />
 
-        {/* Aggregated Stats Overview */}
-        <StatsOverview data={aggregatedMetrics} activeMetrics={filterState.activeMetrics} />
+        {/* Aggregated Stats Overview (with clickable metric cards) */}
+        <StatsOverview
+          data={aggregatedMetrics}
+          activeMetrics={filterState.activeMetrics}
+          onMetricToggle={handleMetricToggle}
+        />
 
-        {/* Metric Toggle */}
-        <MetricToggle activeMetrics={filterState.activeMetrics} onChange={handleMetricsChange} />
+        {/* Tags Section (replaces MetricToggle position) */}
+        <TagsSection
+          availableTags={availableTags}
+          selectedTags={filterState.selectedTags}
+          onTagToggle={handleTagToggle}
+          onClearTags={handleClearTags}
+          onCreateTag={handleCreateTag}
+          onDeleteTag={handleDeleteTag}
+        />
 
         {/* Domains Grid */}
         <DomainsGrid
@@ -124,13 +169,6 @@ export function CustomAnalyticsPage() {
           onFavoriteToggle={handleToggleFavorite}
           onTagsChange={handleDomainTagsChange}
           onDomainClick={handleDomainClick}
-        />
-
-        {/* Tag Manager */}
-        <TagManager
-          availableTags={availableTags}
-          onCreateTag={handleCreateTag}
-          onDeleteTag={handleDeleteTag}
         />
       </div>
     </div>

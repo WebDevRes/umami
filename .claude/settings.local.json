@@ -36,7 +36,10 @@
       "Bash(docker start:*)",
       "Bash(docker-compose down:*)",
       "Bash(docker-compose build:*)",
-      "Bash(npm view:*)"
+      "Bash(npm view:*)",
+      "Bash(timeout:*)",
+      "Bash(curl:*)",
+      "Bash(nul)"
     ],
     "deny": [],
     "ask": []
