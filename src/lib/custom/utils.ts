@@ -236,19 +236,18 @@ export function filterTimeSeriesByDateRange(
   timeSeries: TimeSeriesDataPoint[],
   dateRange: 'today' | 'yesterday' | '7d' | '28d' | '90d' | 'custom',
 ): TimeSeriesDataPoint[] {
-  // CUSTOM: For today/yesterday, filter by specific date (hourly data)
-  if (dateRange === 'today') {
-    const today = new Date().toISOString().split('T')[0];
-    return timeSeries.filter(point => point.date.startsWith(today));
-  }
-  if (dateRange === 'yesterday') {
-    const yesterday = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString().split('T')[0];
-    return timeSeries.filter(point => point.date.startsWith(yesterday));
+  // CUSTOM: For today/yesterday with hourly data (dateRangeDays <= 2),
+  // API already returns data for last 24h, so don't filter by date
+  if (dateRange === 'today' || dateRange === 'yesterday') {
+    // Return all hourly data (API already filtered to correct 24h period)
+    return timeSeries;
   }
 
-  // CUSTOM: For other ranges (7d/28d/90d), filter ONLY daily data (exclude hourly)
+  // CUSTOM: For other ranges (7d/28d/90d), take last N days
   const days = getDateRangeDays(dateRange);
-  const dailyData = timeSeries.filter(point => !point.date.includes(' ')); // Exclude hourly data
+  // API returns daily data as "YYYY-MM-DD HH:MM:SS" (daily) or "YYYY-MM-DDTHH:MM" (hourly)
+  // We consider "HH:MM:SS" pattern as daily, exclude only if it's actual hourly format
+  const dailyData = timeSeries.filter(point => !point.date.match(/\d{4}-\d{2}-\d{2}T\d{2}:\d{2}/));
   return dailyData.slice(-days);
 }
 
@@ -259,12 +258,22 @@ export function recalculateDomainMetricsForDateRange(
   domain: DomainMetrics,
   dateRange: 'today' | 'yesterday' | '7d' | '28d' | '90d' | 'custom',
 ): DomainMetrics {
-  // CUSTOM: Use filterTimeSeriesByDateRange for proper today/yesterday filtering
+  // CUSTOM: For today/yesterday, data is already fetched with correct period (hourly)
+  // No need to recalculate - API returned data for exactly last 24h
+  if (dateRange === 'today' || dateRange === 'yesterday') {
+    return domain;
+  }
+
+  // CUSTOM: Use filterTimeSeriesByDateRange for other ranges
   const filteredTimeSeries = filterTimeSeriesByDateRange(domain.timeSeries, dateRange);
   const days = getDateRangeDays(dateRange);
 
   if (filteredTimeSeries.length === 0) {
-    return domain;
+    // Return domain with empty timeSeries
+    return {
+      ...domain,
+      timeSeries: [],
+    };
   }
 
   // Calculate current metrics from filtered time series
@@ -557,31 +566,39 @@ export function calculateAggregatedMetrics(
     }))
     .sort((a, b) => a.date.localeCompare(b.date));
 
-  // Aggregate totals from time series
-  const totals = timeSeries.reduce(
+  // Aggregate pageviews/visits from time series (day-by-day data)
+  const timeSeriesTotals = timeSeries.reduce(
     (acc, point) => ({
       pageviews: acc.pageviews + point.pageviews,
       visits: acc.visits + point.visits,
-      visitors: acc.visitors + point.visitors,
-      bounces: acc.bounces + point.bounces,
-      avgTime: acc.avgTime + point.avgTime,
     }),
-    { pageviews: 0, visits: 0, visitors: 0, bounces: 0, avgTime: 0 },
+    { pageviews: 0, visits: 0 },
+  );
+
+  // Aggregate visitors/bounces/avgTime from domain stats (not available per-day)
+  const domainTotals = domains.reduce(
+    (acc, domain) => ({
+      visitors: acc.visitors + domain.visitors.current,
+      bounces: acc.bounces + domain.bounces.current,
+      avgTime: acc.avgTime + domain.avgTime.current,
+    }),
+    { visitors: 0, bounces: 0, avgTime: 0 },
   );
 
   // Calculate average bounce rate (bounces / visits * 100)
-  const bounceRate = totals.visits > 0 ? (totals.bounces / totals.visits) * 100 : 0;
+  const bounceRate =
+    timeSeriesTotals.visits > 0 ? (domainTotals.bounces / timeSeriesTotals.visits) * 100 : 0;
 
-  // Calculate average time
-  const avgTime = timeSeries.length > 0 ? totals.avgTime / timeSeries.length : 0;
+  // Calculate average time across all domains
+  const avgTime = domains.length > 0 ? domainTotals.avgTime / domains.length : 0;
 
   // Get realtime total
   const realtimeTotal = domains.reduce((sum, d) => sum + d.realtimeVisitors, 0);
 
   return {
-    pageviews: totals.pageviews,
-    visits: totals.visits,
-    visitors: totals.visitors,
+    pageviews: timeSeriesTotals.pageviews,
+    visits: timeSeriesTotals.visits,
+    visitors: domainTotals.visitors,
     bounceRate: Math.round(bounceRate * 10) / 10, // Round to 1 decimal
     avgTime: Math.round(avgTime),
     realtimeTotal,

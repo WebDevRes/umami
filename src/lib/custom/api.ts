@@ -54,9 +54,10 @@ export async function fetchUserWebsites(): Promise<any[]> {
     // Fetch teams
     const teams = await fetchUserTeams(token);
 
-    // Fetch websites from all teams
+    // Fetch websites from all teams with pagination
     const teamWebsitesPromises = teams.map(async team => {
-      const response = await fetch(`/api/teams/${team.id}/websites`, {
+      // Request all websites (max 1000 per team, should be enough)
+      const response = await fetch(`/api/teams/${team.id}/websites?pageSize=1000`, {
         headers: {
           Authorization: `Bearer ${token}`,
         },
@@ -120,7 +121,8 @@ export async function fetchWebsitePageviews(
   unit: 'hour' | 'day' = 'day',
 ): Promise<any> {
   const token = getClientAuthToken();
-  const url = `/api/websites/${websiteId}/pageviews?startAt=${startAt}&endAt=${endAt}&unit=${unit}`;
+  // CUSTOM: Added required timezone parameter (defaults to UTC)
+  const url = `/api/websites/${websiteId}/pageviews?startAt=${startAt}&endAt=${endAt}&unit=${unit}&timezone=UTC`;
   const response = await fetch(url, {
     headers: {
       Authorization: `Bearer ${token}`,
@@ -217,14 +219,28 @@ function convertPageviewsToTimeSeries(pageviewsData: any): TimeSeriesDataPoint[]
     return [];
   }
 
-  return pageviewsData.pageviews.map((item: any) => ({
-    date: item.t || item.x, // t = timestamp label, x = date string
-    pageviews: item.y || 0,
-    visits: 0, // Not provided by pageviews endpoint
-    visitors: 0,
-    bounces: 0,
-    avgTime: 0,
-  }));
+  // Create a map of date -> sessions
+  const sessionsMap = new Map<string, number>();
+  if (pageviewsData.sessions && Array.isArray(pageviewsData.sessions)) {
+    pageviewsData.sessions.forEach((item: any) => {
+      const date = item.t || item.x;
+      sessionsMap.set(date, item.y || 0);
+    });
+  }
+
+  return pageviewsData.pageviews.map((item: any) => {
+    const date = item.t || item.x;
+    const visits = sessionsMap.get(date) || 0;
+
+    return {
+      date,
+      pageviews: item.y || 0,
+      visits, // Use sessions data as visits
+      visitors: 0, // Not available per-day
+      bounces: 0, // Not available per-day
+      avgTime: 0, // Not available per-day
+    };
+  });
 }
 
 /**
@@ -290,6 +306,35 @@ export async function fetchDashboardData(dateRangeDays: number = 7): Promise<Das
       }),
     );
 
+    // Aggregate time series from all domains
+    const timeSeriesMap = new Map<string, TimeSeriesDataPoint>();
+
+    domainsData.forEach(domain => {
+      domain.timeSeries.forEach(point => {
+        const key = point.date;
+        const existing = timeSeriesMap.get(key) || {
+          date: key,
+          pageviews: 0,
+          visits: 0,
+          visitors: 0,
+          bounces: 0,
+          avgTime: 0,
+        };
+
+        existing.pageviews += point.pageviews;
+        existing.visits += point.visits;
+        existing.visitors += point.visitors;
+        existing.bounces += point.bounces;
+        existing.avgTime += point.avgTime;
+
+        timeSeriesMap.set(key, existing);
+      });
+    });
+
+    const aggregatedTimeSeries = Array.from(timeSeriesMap.values()).sort(
+      (a, b) => new Date(a.date).getTime() - new Date(b.date).getTime(),
+    );
+
     // Calculate aggregated totals
     const totals = {
       pageviews: domainsData.reduce((sum, d) => sum + d.pageviews.current, 0),
@@ -307,7 +352,7 @@ export async function fetchDashboardData(dateRangeDays: number = 7): Promise<Das
           Math.max(domainsData.length, 1),
       ),
       realtimeTotal: 0,
-      timeSeries: [], // TODO: Aggregate time series from all domains
+      timeSeries: aggregatedTimeSeries,
     };
 
     return {

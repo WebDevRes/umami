@@ -56,7 +56,9 @@ export function MiniChart({ data, activeMetrics, height = 80, className }: MiniC
   const chartRef = useRef<any>(null);
 
   const chartData = useMemo(() => {
-    if (!data || data.length === 0) return null;
+    if (!data || data.length === 0) {
+      return null;
+    }
 
     const labels = data.map(d => d.date);
     const datasets = activeMetrics.map(metric => {
