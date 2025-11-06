@@ -15,13 +15,22 @@ COPY . .
 
 ARG DATABASE_TYPE
 ARG BASE_PATH
+ARG DATABASE_URL
+ARG NODE_OPTIONS
 
 ENV DATABASE_TYPE=$DATABASE_TYPE
 ENV BASE_PATH=$BASE_PATH
+ENV DATABASE_URL=$DATABASE_URL
+ENV NODE_OPTIONS=$NODE_OPTIONS
 
 ENV NEXT_TELEMETRY_DISABLED=1
 
-RUN npm run build-docker
+RUN echo "=== Starting build with NODE_OPTIONS=$NODE_OPTIONS ===" && \
+    npm run build-docker && \
+    echo "=== Build completed. Checking .next directory ===" && \
+    ls -la /app/.next/ && \
+    echo "=== Checking standalone output ===" && \
+    ls -la /app/.next/standalone/ || echo "ERROR: standalone directory not found!"
 
 # Production image, copy all the files and run next
 FROM node:22-alpine AS runner
