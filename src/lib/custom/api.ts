@@ -6,7 +6,26 @@ import { getClientAuthToken } from '@/lib/client';
 import type { DomainMetrics, TimeSeriesDataPoint, DashboardData } from './types';
 
 /**
- * Fetch all user websites from Umami API
+ * Fetch user's teams
+ */
+async function fetchUserTeams(token: string): Promise<any[]> {
+  const response = await fetch('/api/me/teams', {
+    headers: {
+      Authorization: `Bearer ${token}`,
+    },
+  });
+
+  if (!response.ok) {
+    throw new Error(`Failed to fetch teams: ${response.status} ${response.statusText}`);
+  }
+
+  const data = await response.json();
+  return data.data || [];
+}
+
+/**
+ * Fetch all websites from user's teams and personal websites
+ * CUSTOM: Modified to support team websites
  */
 export async function fetchUserWebsites(): Promise<any[]> {
   const token = getClientAuthToken();
@@ -18,21 +37,56 @@ export async function fetchUserWebsites(): Promise<any[]> {
     throw new Error('Authentication token not found. Please log in again.');
   }
 
-  const response = await fetch('/api/me/websites', {
-    headers: {
-      Authorization: `Bearer ${token}`,
-    },
-  });
+  try {
+    // Fetch personal websites
+    const personalResponse = await fetch('/api/me/websites', {
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+    });
 
-  if (!response.ok) {
-    const errorText = await response.text();
+    let personalWebsites: any[] = [];
+    if (personalResponse.ok) {
+      const personalData = await personalResponse.json();
+      personalWebsites = personalData.data || [];
+    }
+
+    // Fetch teams
+    const teams = await fetchUserTeams(token);
+
+    // Fetch websites from all teams
+    const teamWebsitesPromises = teams.map(async team => {
+      const response = await fetch(`/api/teams/${team.id}/websites`, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+
+      if (!response.ok) {
+        // eslint-disable-next-line no-console
+        console.warn(`Failed to fetch websites for team ${team.name}`);
+        return [];
+      }
+
+      const data = await response.json();
+      return data.data || [];
+    });
+
+    const teamWebsitesArrays = await Promise.all(teamWebsitesPromises);
+    const teamWebsites = teamWebsitesArrays.flat();
+
+    // Combine personal and team websites, remove duplicates by id
+    const allWebsites = [...personalWebsites, ...teamWebsites];
+    const uniqueWebsites = Array.from(
+      new Map(allWebsites.map(w => [w.id || w.website_id, w])).values(),
+    );
+
+    return uniqueWebsites;
+  } catch (error) {
     // eslint-disable-next-line no-console
-    console.error('[Custom Analytics] API error:', response.status, errorText);
-    throw new Error(`Failed to fetch websites: ${response.status} ${response.statusText}`);
+    console.error('[Custom Analytics] Failed to fetch websites:', error);
+    throw error;
   }
-
-  const data = await response.json();
-  return data.data || [];
 }
 
 /**
