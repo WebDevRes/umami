@@ -2,13 +2,19 @@
 // CUSTOM: Real data fetching from Umami API
 // Date: 2025-11-06
 
+import { getClientAuthToken } from '@/lib/client';
 import type { DomainMetrics, TimeSeriesDataPoint, DashboardData } from './types';
 
 /**
  * Fetch all user websites from Umami API
  */
 export async function fetchUserWebsites(): Promise<any[]> {
-  const response = await fetch('/api/me/websites');
+  const token = getClientAuthToken();
+  const response = await fetch('/api/me/websites', {
+    headers: {
+      Authorization: `Bearer ${token}`,
+    },
+  });
   if (!response.ok) {
     throw new Error(`Failed to fetch websites: ${response.statusText}`);
   }
@@ -24,8 +30,13 @@ export async function fetchWebsiteStats(
   startAt: number,
   endAt: number,
 ): Promise<any> {
+  const token = getClientAuthToken();
   const url = `/api/websites/${websiteId}/stats?startAt=${startAt}&endAt=${endAt}`;
-  const response = await fetch(url);
+  const response = await fetch(url, {
+    headers: {
+      Authorization: `Bearer ${token}`,
+    },
+  });
   if (!response.ok) {
     throw new Error(`Failed to fetch stats for ${websiteId}: ${response.statusText}`);
   }
@@ -41,8 +52,13 @@ export async function fetchWebsitePageviews(
   endAt: number,
   unit: 'hour' | 'day' = 'day',
 ): Promise<any> {
+  const token = getClientAuthToken();
   const url = `/api/websites/${websiteId}/pageviews?startAt=${startAt}&endAt=${endAt}&unit=${unit}`;
-  const response = await fetch(url);
+  const response = await fetch(url, {
+    headers: {
+      Authorization: `Bearer ${token}`,
+    },
+  });
   if (!response.ok) {
     throw new Error(`Failed to fetch pageviews for ${websiteId}: ${response.statusText}`);
   }
