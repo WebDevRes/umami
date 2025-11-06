@@ -10,14 +10,27 @@ import type { DomainMetrics, TimeSeriesDataPoint, DashboardData } from './types'
  */
 export async function fetchUserWebsites(): Promise<any[]> {
   const token = getClientAuthToken();
+
+  // CUSTOM: Debug token availability
+  if (!token) {
+    // eslint-disable-next-line no-console
+    console.error('[Custom Analytics] No auth token found in localStorage');
+    throw new Error('Authentication token not found. Please log in again.');
+  }
+
   const response = await fetch('/api/me/websites', {
     headers: {
       Authorization: `Bearer ${token}`,
     },
   });
+
   if (!response.ok) {
-    throw new Error(`Failed to fetch websites: ${response.statusText}`);
+    const errorText = await response.text();
+    // eslint-disable-next-line no-console
+    console.error('[Custom Analytics] API error:', response.status, errorText);
+    throw new Error(`Failed to fetch websites: ${response.status} ${response.statusText}`);
   }
+
   const data = await response.json();
   return data.data || [];
 }
