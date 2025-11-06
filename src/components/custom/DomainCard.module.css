@@ -90,7 +90,7 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  transition: opacity 0.2s ease;
+  transition: all 0.2s ease;
   flex-shrink: 0;
 }
 
@@ -98,15 +98,20 @@
   opacity: 0.7;
 }
 
+.tagBtnEmpty {
+  opacity: 0.4;
+  filter: grayscale(100%);
+}
+
 .tagMenu {
   position: absolute;
   top: 100%;
   right: 0;
   margin-top: 4px;
-  background: var(--base0);
+  background: var(--base50);
   border: 1px solid var(--base400);
   border-radius: 6px;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.25);
   z-index: 10;
   min-width: 160px;
   max-width: 200px;

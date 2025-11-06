@@ -373,3 +373,141 @@ const recalculatedDomains = domains.map(domain =>
 - Mini charts in cards show only data for selected period
 
 **Status:** ✅ Complete - Domain cards now sync with date range filter, all metrics update consistently
+
+---
+
+### 2025-11-06 - Stats Cards Redesign & Tag Manager Fixes ✅ COMPLETE
+**Files Modified:**
+- `src/components/custom/StatsOverview.module.css:8-32,34-46,48-65` - Reduced stats card size and centered layout
+  - Changed grid to flexbox with `justify-content: center`
+  - Reduced padding from 12px to 8px 16px
+  - Set min-width: 120px, max-width: 140px (~50% size reduction)
+  - Reduced label font from 13px to 11px
+  - Reduced value font from 28px to 18px
+  - Centered text alignment
+  - Removed border colors from active state
+  - Updated hover effects (removed background color change)
+- `src/components/custom/StatsOverview.tsx:13-18,227-279` - Added colored backgrounds for active metrics
+  - Added `bg` property to METRIC_COLORS (15% opacity backgrounds)
+  - Applied inline styles with `backgroundColor` when metric is active
+  - Removed border indicators, using only background colors
+- `src/components/custom/TagManager.tsx:13-35` - Fixed duplicate button issue
+  - Removed internal toggle state (`isOpen`)
+  - Removed duplicate "Manage Tags" button (lines 38-43)
+  - Component now only renders modal when mounted
+  - Relies on parent component (TagsSection) for open/close state
+- `src/app/(main)/custom-analytics/CustomAnalyticsPage.tsx:2,17-18,33-59` - Fixed tag persistence
+  - Added `useEffect` import
+  - Added localStorage keys: `STORAGE_KEY_TAGS` and `STORAGE_KEY_DOMAINS`
+  - Initialize `availableTags` from localStorage (fallback to mock data)
+  - Initialize `domains` from localStorage (fallback to mock data)
+  - Save `availableTags` to localStorage on change (useEffect)
+  - Save `domains` to localStorage on change (useEffect)
+  - SSR-safe with `typeof window` checks
+
+**Issues Fixed:**
+1. **Stats cards too large:** Cards reduced by ~50% in size with centered compact layout
+2. **Mini metric icons unclear:** Removed legend indicators, now active metrics have colored backgrounds matching their chart line colors
+3. **Duplicate "Manage Tags" button:** Fixed TagManager component showing two buttons when opened
+4. **Tag deletion not persisting:** Tags now saved to localStorage, persist across page refreshes
+
+**Color Mapping:**
+- Pageviews: Blue (`hsla(210, 100%, 60%, 0.15)`)
+- Visits: Purple (`hsla(280, 100%, 65%, 0.15)`)
+- Visitors: Orange (`hsla(25, 100%, 60%, 0.15)`)
+- Bounces: Red (`hsla(0, 85%, 60%, 0.15)`)
+- Avg. Time: Teal (`hsla(160, 70%, 50%, 0.15)`)
+
+**Expected Behavior:**
+- Stats cards are compact and centered (~120-140px wide)
+- Active metrics show colored backgrounds (no borders)
+- Single "Manage Tags" button in TagsSection
+- Created/deleted tags persist after page refresh
+- Domain tag assignments persist after page refresh
+
+**Status:** ✅ Complete - Improved UX with compact colored cards and persistent tag management
+
+---
+
+### 2025-11-06 - UX Improvements: Stats Cards Revert & Tag Display Refinement ✅ COMPLETE
+**Files Modified:**
+- `src/components/custom/StatsOverview.module.css:8-28,45-58` - Reverted stats cards to original size
+  - Changed flexbox back to grid layout
+  - Restored padding from 8px 16px to 12px
+  - Restored min-width/max-width constraints
+  - Restored label font from 11px to 13px
+  - Restored value font from 18px to 28px
+  - Restored left text alignment
+- `src/components/custom/DomainCard.tsx:184-202` - Moved active tags to top of cards
+  - Relocated tags section from bottom to top (after header, before chart)
+  - Tags now appear immediately after domain name
+  - Only tag icon button visible in header
+- `src/components/custom/DomainCard.module.css:101-113` - Reduced tag menu transparency
+  - Changed background from `var(--base0)` to `var(--base50)` (less transparent)
+  - Increased box-shadow opacity from 0.15 to 0.25
+- `src/components/custom/TagManager.module.css:22-46` - Improved main modal design
+  - Increased backdrop opacity from 0.5 to 0.75
+  - Changed modal background from `var(--base0)` to `var(--base50)` (less transparent)
+  - Added border: `1px solid var(--base300)`
+  - Increased box-shadow opacity from 0.3 to 0.4
+- `src/components/custom/TagManager.tsx:36-43` - Added backdrop click to close
+  - New `handleBackdropClick` handler
+  - Modal closes when clicking outside content area
+  - Existing X button still works
+
+**Issues Fixed:**
+1. **Stats cards too small:** Reverted to original comfortable size
+2. **Tag labels cluttering cards:** Hidden tag text labels, showing only icon button
+3. **Tags in wrong position:** Moved active tags from bottom to top (below domain name)
+4. **Tag menu too transparent:** Increased opacity for better visibility in both card dropdown and main modal
+5. **No way to close TagManager:** Added backdrop click handler + existing X button
+
+**Expected Behavior:**
+- Stats cards back to original size (~200px wide)
+- Domain cards show active tags at top (below header)
+- Only tag icon (🏷️) visible in header actions
+- Tag dropdown menus have better contrast/visibility
+- Main TagManager modal closable by:
+  - Clicking X button (top right)
+  - Clicking outside modal area (backdrop)
+
+**Status:** ✅ Complete - Reverted stats size, improved tag UX and modal visibility
+
+---
+
+### 2025-11-06 - Tag Display Optimization ✅ COMPLETE
+**Files Modified:**
+- `src/components/custom/DomainCard.tsx:1,133-138,153-175` - Tag display improvements
+  - Added `useMemo` import
+  - Removed visible tags block from card body (lines 184-193 deleted)
+  - Added `sortedTags` computed property - sorts tags with active first, inactive second
+  - Added `tagBtnEmpty` class when domain has no tags
+  - Added dynamic tooltip: "No tags assigned" or "X tag(s)"
+  - Tags now only visible in dropdown menu, not on card surface
+- `src/components/custom/DomainCard.module.css:82-104` - Added minimalist no-tags indicator
+  - Changed transition from `opacity` to `all` for smooth effects
+  - Added `.tagBtnEmpty` style: 40% opacity + grayscale filter
+  - Creates subtle, minimalist appearance for domains without tags
+
+**Issues Fixed:**
+1. **Tag clutter:** Removed visible tag pills from card body
+2. **Unsorted dropdown:** Active tags now appear at top of dropdown list
+3. **No visual feedback for empty tags:** Icon becomes gray/transparent when no tags assigned
+
+**User Experience:**
+- **Card surface:** Clean, minimal - no visible tags
+- **Tag icon (🏷️):**
+  - Normal: Domain has tags (full color, hover shows count)
+  - Dimmed: No tags assigned (40% opacity, grayscale, hover shows "No tags assigned")
+- **Dropdown menu:**
+  - Active tags listed first (checked)
+  - Inactive tags listed below (unchecked)
+  - Sorted dynamically based on domain's current tags
+
+**Expected Behavior:**
+- Domain cards show NO tags on surface (clean design)
+- Click 🏷️ icon to see/manage tags in dropdown
+- Domains without tags have subtle gray icon
+- Dropdown automatically sorts: checked tags on top
+
+**Status:** ✅ Complete - Clean, minimalist tag management with smart sorting

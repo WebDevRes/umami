@@ -1,4 +1,4 @@
-import { memo, useCallback, useState, useRef, useEffect } from 'react';
+import { memo, useCallback, useState, useRef, useEffect, useMemo } from 'react';
 import Icons from '@/components/icons';
 import { DomainMetrics, MetricType } from '@/lib/custom/types';
 import Favicon from '@/components/common/Favicon';
@@ -130,6 +130,13 @@ function DomainCardComponent({
     [domain],
   );
 
+  // Sort tags: active first, then inactive
+  const sortedTags = useMemo(() => {
+    const activeTags = availableTags.filter(tag => domain.tags.includes(tag));
+    const inactiveTags = availableTags.filter(tag => !domain.tags.includes(tag));
+    return [...activeTags, ...inactiveTags];
+  }, [availableTags, domain.tags]);
+
   return (
     <div className={styles.card} onClick={handleCardClick}>
       {/* Header */}
@@ -144,10 +151,12 @@ function DomainCardComponent({
           {availableTags.length > 0 && onTagsChange && (
             <div className={styles.tagMenuContainer} ref={tagMenuRef}>
               <button
-                className={styles.tagBtn}
+                className={`${styles.tagBtn} ${domain.tags.length === 0 ? styles.tagBtnEmpty : ''}`}
                 onClick={handleTagButtonClick}
                 aria-label="Manage tags"
-                title="Manage tags"
+                title={
+                  domain.tags.length === 0 ? 'No tags assigned' : `${domain.tags.length} tag(s)`
+                }
               >
                 🏷️
               </button>
@@ -155,7 +164,7 @@ function DomainCardComponent({
                 <div className={styles.tagMenu}>
                   <div className={styles.tagMenuHeader}>Assign Tags</div>
                   <div className={styles.tagMenuList}>
-                    {availableTags.map(tag => (
+                    {sortedTags.map(tag => (
                       <label key={tag} className={styles.tagMenuItem}>
                         <input
                           type="checkbox"
@@ -188,17 +197,6 @@ function DomainCardComponent({
 
       {/* Metrics */}
       <div className={styles.metrics}>{activeMetrics.map(renderMetric)}</div>
-
-      {/* Tags */}
-      {domain.tags.length > 0 && (
-        <div className={styles.tags}>
-          {domain.tags.map(tag => (
-            <span key={tag} className={styles.tag}>
-              {tag}
-            </span>
-          ))}
-        </div>
-      )}
     </div>
   );
 }

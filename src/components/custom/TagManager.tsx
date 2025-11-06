@@ -1,6 +1,5 @@
 import { useState } from 'react';
 import { Icons } from 'react-basics';
-import Icons2 from '@/components/icons';
 import styles from './TagManager.module.css';
 
 export interface TagManagerProps {
@@ -11,7 +10,6 @@ export interface TagManagerProps {
 }
 
 export function TagManager({ availableTags, onCreateTag, onDeleteTag, onClose }: TagManagerProps) {
-  const [isOpen, setIsOpen] = useState(!onClose); // If onClose provided, start open (modal mode)
   const [newTag, setNewTag] = useState('');
 
   const handleSubmit = (e: React.FormEvent) => {
@@ -34,23 +32,20 @@ export function TagManager({ availableTags, onCreateTag, onDeleteTag, onClose }:
     }
   };
 
-  if (!isOpen) {
-    return (
-      <button className={styles.openBtn} onClick={() => setIsOpen(true)}>
-        <Icons2.Gear width={16} height={16} />
-        Manage Tags
-      </button>
-    );
-  }
+  const handleBackdropClick = (e: React.MouseEvent) => {
+    if (e.target === e.currentTarget && onClose) {
+      onClose();
+    }
+  };
 
   return (
-    <div className={styles.modal}>
+    <div className={styles.modal} onClick={handleBackdropClick}>
       <div className={styles.modalContent}>
         <div className={styles.modalHeader}>
           <h2 className={styles.modalTitle}>Manage Tags</h2>
           <button
             className={styles.closeBtn}
-            onClick={() => (onClose ? onClose() : setIsOpen(false))}
+            onClick={() => onClose && onClose()}
             aria-label="Close"
           >
             <Icons.Close width={20} height={20} />

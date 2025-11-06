@@ -10,12 +10,32 @@ export interface StatsOverviewProps {
 }
 
 // Metric color mapping
-const METRIC_COLORS: Record<MetricType, { line: string; gradient: string }> = {
-  pageviews: { line: 'hsl(210, 100%, 60%)', gradient: 'hsla(210, 100%, 60%, 0.2)' },
-  visits: { line: 'hsl(280, 100%, 65%)', gradient: 'hsla(280, 100%, 65%, 0.2)' },
-  visitors: { line: 'hsl(25, 100%, 60%)', gradient: 'hsla(25, 100%, 60%, 0.2)' },
-  bounces: { line: 'hsl(0, 85%, 60%)', gradient: 'hsla(0, 85%, 60%, 0.2)' },
-  avgTime: { line: 'hsl(160, 70%, 50%)', gradient: 'hsla(160, 70%, 50%, 0.2)' },
+const METRIC_COLORS: Record<MetricType, { line: string; gradient: string; bg: string }> = {
+  pageviews: {
+    line: 'hsl(210, 100%, 60%)',
+    gradient: 'hsla(210, 100%, 60%, 0.2)',
+    bg: 'hsla(210, 100%, 60%, 0.15)',
+  },
+  visits: {
+    line: 'hsl(280, 100%, 65%)',
+    gradient: 'hsla(280, 100%, 65%, 0.2)',
+    bg: 'hsla(280, 100%, 65%, 0.15)',
+  },
+  visitors: {
+    line: 'hsl(25, 100%, 60%)',
+    gradient: 'hsla(25, 100%, 60%, 0.2)',
+    bg: 'hsla(25, 100%, 60%, 0.15)',
+  },
+  bounces: {
+    line: 'hsl(0, 85%, 60%)',
+    gradient: 'hsla(0, 85%, 60%, 0.2)',
+    bg: 'hsla(0, 85%, 60%, 0.15)',
+  },
+  avgTime: {
+    line: 'hsl(160, 70%, 50%)',
+    gradient: 'hsla(160, 70%, 50%, 0.2)',
+    bg: 'hsla(160, 70%, 50%, 0.15)',
+  },
 };
 
 const METRIC_LABELS: Record<MetricType, string> = {
@@ -224,6 +244,7 @@ export function StatsOverview({
           }`}
           onClick={() => handleCardClick('pageviews')}
           disabled={!onMetricToggle}
+          style={isMetricActive('pageviews') ? { backgroundColor: METRIC_COLORS.pageviews.bg } : {}}
         >
           <div className={styles.label}>Total Pageviews</div>
           <div className={styles.value}>{formatNumber(data.pageviews)}</div>
@@ -234,6 +255,7 @@ export function StatsOverview({
           }`}
           onClick={() => handleCardClick('visits')}
           disabled={!onMetricToggle}
+          style={isMetricActive('visits') ? { backgroundColor: METRIC_COLORS.visits.bg } : {}}
         >
           <div className={styles.label}>Total Visits</div>
           <div className={styles.value}>{formatNumber(data.visits)}</div>
@@ -244,6 +266,7 @@ export function StatsOverview({
           }`}
           onClick={() => handleCardClick('visitors')}
           disabled={!onMetricToggle}
+          style={isMetricActive('visitors') ? { backgroundColor: METRIC_COLORS.visitors.bg } : {}}
         >
           <div className={styles.label}>Total Visitors</div>
           <div className={styles.value}>{formatNumber(data.visitors)}</div>
@@ -254,6 +277,7 @@ export function StatsOverview({
           }`}
           onClick={() => handleCardClick('bounces')}
           disabled={!onMetricToggle}
+          style={isMetricActive('bounces') ? { backgroundColor: METRIC_COLORS.bounces.bg } : {}}
         >
           <div className={styles.label}>Total Bounces</div>
           <div className={styles.value}>
@@ -266,6 +290,7 @@ export function StatsOverview({
           }`}
           onClick={() => handleCardClick('avgTime')}
           disabled={!onMetricToggle}
+          style={isMetricActive('avgTime') ? { backgroundColor: METRIC_COLORS.avgTime.bg } : {}}
         >
           <div className={styles.label}>Avg. Time</div>
           <div className={styles.value}>

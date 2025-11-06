@@ -1,5 +1,5 @@
 'use client';
-import { useState, useMemo, useCallback } from 'react';
+import { useState, useMemo, useCallback, useEffect } from 'react';
 import PageHeader from '@/components/layout/PageHeader';
 import FilterBar from '@/components/custom/FilterBar';
 import StatsOverview from '@/components/custom/StatsOverview';
@@ -14,6 +14,9 @@ import {
 import type { DomainMetrics, MetricType, FilterState, DashboardData } from '@/lib/custom/types';
 import styles from './CustomAnalyticsPage.module.css';
 
+const STORAGE_KEY_TAGS = 'custom-analytics-tags';
+const STORAGE_KEY_DOMAINS = 'custom-analytics-domains';
+
 export function CustomAnalyticsPage() {
   // Generate mock data (500+ domains)
   const mockData = useMemo<DashboardData>(() => generateMockData(), []);
@@ -27,11 +30,33 @@ export function CustomAnalyticsPage() {
     activeMetrics: ['pageviews', 'visits', 'visitors'],
   });
 
-  // Tag manager state
-  const [availableTags, setAvailableTags] = useState<string[]>(mockData.availableTags);
+  // Tag manager state - load from localStorage
+  const [availableTags, setAvailableTags] = useState<string[]>(() => {
+    if (typeof window === 'undefined') return mockData.availableTags;
+    const stored = localStorage.getItem(STORAGE_KEY_TAGS);
+    return stored ? JSON.parse(stored) : mockData.availableTags;
+  });
 
-  // Domain management state (for favorites and tags)
-  const [domains, setDomains] = useState<DomainMetrics[]>(mockData.domains);
+  // Domain management state (for favorites and tags) - load from localStorage
+  const [domains, setDomains] = useState<DomainMetrics[]>(() => {
+    if (typeof window === 'undefined') return mockData.domains;
+    const stored = localStorage.getItem(STORAGE_KEY_DOMAINS);
+    return stored ? JSON.parse(stored) : mockData.domains;
+  });
+
+  // Save tags to localStorage whenever they change
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      localStorage.setItem(STORAGE_KEY_TAGS, JSON.stringify(availableTags));
+    }
+  }, [availableTags]);
+
+  // Save domains to localStorage whenever they change
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      localStorage.setItem(STORAGE_KEY_DOMAINS, JSON.stringify(domains));
+    }
+  }, [domains]);
 
   // Recalculate domain metrics based on selected date range, then filter and sort
   const filteredDomains = useMemo(() => {

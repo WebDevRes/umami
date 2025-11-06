@@ -25,7 +25,7 @@
   left: 0;
   right: 0;
   bottom: 0;
-  background: rgba(0, 0, 0, 0.5);
+  background: rgba(0, 0, 0, 0.75);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -34,7 +34,8 @@
 }
 
 .modalContent {
-  background: var(--base0);
+  background: var(--base50);
+  border: 1px solid var(--base300);
   border-radius: 12px;
   width: 100%;
   max-width: 500px;
@@ -42,7 +43,7 @@
   overflow: hidden;
   display: flex;
   flex-direction: column;
-  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.4);
 }
 
 .modalHeader {
