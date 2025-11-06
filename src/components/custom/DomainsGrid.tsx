@@ -10,7 +10,7 @@ export interface DomainsGridProps {
   activeMetrics: MetricType[];
   availableTags?: string[];
   onFavoriteToggle: (id: string) => void;
-  onTagsChange?: (domainId: string, tags: string[]) => void;
+  // onTagsChange?: (domainId: string, tags: string[]) => void; // DISABLED: Tags feature disabled
   onDomainClick: (id: string) => void;
 }
 
@@ -32,7 +32,7 @@ export function DomainsGrid({
   activeMetrics,
   availableTags,
   onFavoriteToggle,
-  onTagsChange,
+  // onTagsChange, // DISABLED: Tags feature disabled
   onDomainClick,
 }: DomainsGridProps) {
   const containerRef = useRef<HTMLDivElement>(null);
@@ -88,7 +88,7 @@ export function DomainsGrid({
             activeMetrics={activeMetrics}
             availableTags={availableTags}
             onFavoriteToggle={onFavoriteToggle}
-            onTagsChange={onTagsChange}
+            // onTagsChange={onTagsChange} // DISABLED: Tags feature disabled
             onClick={onDomainClick}
           />
         </div>
@@ -100,7 +100,7 @@ export function DomainsGrid({
       availableTags,
       columnCount,
       onFavoriteToggle,
-      onTagsChange,
+      // onTagsChange, // DISABLED: Tags feature disabled
       onDomainClick,
     ],
   );
@@ -124,7 +124,7 @@ export function DomainsGrid({
                 activeMetrics={activeMetrics}
                 availableTags={availableTags}
                 onFavoriteToggle={onFavoriteToggle}
-                onTagsChange={onTagsChange}
+                // onTagsChange={onTagsChange} // DISABLED: Tags feature disabled
                 onClick={onDomainClick}
               />
             ))}
