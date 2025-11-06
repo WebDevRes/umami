@@ -83,10 +83,13 @@ export function StatsOverview({
         data: values,
         borderColor: colors.line,
         backgroundColor: colors.gradient,
-        borderWidth: 3,
+        borderWidth: 1.5,
         fill: true,
         tension: 0.4,
-        pointRadius: 0,
+        pointRadius: 2, // CUSTOM: Show small dots on chart
+        pointBackgroundColor: colors.line,
+        pointBorderColor: '#fff',
+        pointBorderWidth: 1,
         pointHoverRadius: 6,
         pointHoverBackgroundColor: colors.line,
         pointHoverBorderColor: '#fff',
@@ -134,12 +137,19 @@ export function StatsOverview({
               display: true,
               grid: {
                 display: true,
-                color: 'rgba(0, 0, 0, 0.05)',
+                color: 'rgba(255, 255, 255, 0.03)', // CUSTOM: Visible grid for dark theme
+                lineWidth: 1,
               },
               ticks: {
                 maxTicksLimit: 8,
                 callback: function (value) {
                   const date = this.getLabelForValue(value as number);
+                  // CUSTOM: Check if hourly data (contains space)
+                  if (date.includes(' ')) {
+                    // Format as "HH:00"
+                    const hour = date.split(' ')[1];
+                    return hour;
+                  }
                   return new Date(date).toLocaleDateString('en-US', {
                     month: 'short',
                     day: 'numeric',
@@ -151,7 +161,8 @@ export function StatsOverview({
               display: true,
               grid: {
                 display: true,
-                color: 'rgba(0, 0, 0, 0.05)',
+                color: 'rgba(255, 255, 255, 0.03)', // CUSTOM: Visible grid for dark theme
+                lineWidth: 1,
               },
               beginAtZero: true,
               ticks: {
@@ -188,6 +199,15 @@ export function StatsOverview({
                 title: tooltipItems => {
                   const date = tooltipItems[0]?.label;
                   if (!date) return '';
+                  // CUSTOM: Check if hourly data
+                  if (date.includes(' ')) {
+                    const [dateStr, hour] = date.split(' ');
+                    const d = new Date(dateStr);
+                    return `${d.toLocaleDateString('en-US', {
+                      month: 'short',
+                      day: 'numeric',
+                    })} - ${hour}`;
+                  }
                   return new Date(date).toLocaleDateString('en-US', {
                     weekday: 'short',
                     month: 'short',

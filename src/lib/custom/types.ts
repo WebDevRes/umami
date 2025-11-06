@@ -9,7 +9,7 @@ export interface MetricValue {
 }
 
 export interface TimeSeriesDataPoint {
-  date: string; // ISO format: 'YYYY-MM-DD'
+  date: string; // ISO format: 'YYYY-MM-DD' or 'YYYY-MM-DD HH:00' for hourly data
   pageviews: number;
   visits: number;
   visitors: number;
@@ -76,7 +76,7 @@ export interface MetricConfig {
 }
 
 export interface FilterState {
-  dateRange: '7d' | '28d' | '90d' | 'custom';
+  dateRange: 'today' | 'yesterday' | '7d' | '28d' | '90d' | 'custom'; // CUSTOM: Added today/yesterday
   searchQuery: string;
   sortBy: SortOption;
   selectedTags: string[];

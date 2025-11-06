@@ -53,13 +53,37 @@ function randomChange(): number {
 }
 
 /**
+ * Generates hourly data for a specific day
+ * CUSTOM: For today/yesterday filters
+ */
+function generateHourlyData(date: Date): TimeSeriesDataPoint[] {
+  const series: TimeSeriesDataPoint[] = [];
+  const dateStr = date.toISOString().split('T')[0];
+
+  // Generate 24 hours of data
+  for (let hour = 0; hour < 24; hour++) {
+    series.push({
+      date: `${dateStr} ${hour.toString().padStart(2, '0')}:00`,
+      pageviews: randomInt(50, 300),
+      visits: randomInt(40, 200),
+      visitors: randomInt(30, 150),
+      bounces: randomInt(10, 40),
+      avgTime: randomInt(20, 180),
+    });
+  }
+
+  return series;
+}
+
+/**
  * Generates time series data for given number of days
  */
 function generateTimeSeries(days: number): TimeSeriesDataPoint[] {
   const series: TimeSeriesDataPoint[] = [];
   const today = new Date();
 
-  for (let i = days - 1; i >= 0; i--) {
+  // Generate daily data for the past
+  for (let i = days - 1; i >= 2; i--) {
     const date = new Date(today);
     date.setDate(date.getDate() - i);
 
@@ -72,6 +96,13 @@ function generateTimeSeries(days: number): TimeSeriesDataPoint[] {
       avgTime: randomInt(30, 300),
     });
   }
+
+  // CUSTOM: Add hourly data for yesterday and today
+  const yesterday = new Date(today);
+  yesterday.setDate(yesterday.getDate() - 1);
+
+  series.push(...generateHourlyData(yesterday));
+  series.push(...generateHourlyData(today));
 
   return series;
 }

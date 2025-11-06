@@ -45,6 +45,12 @@
   background: var(--base0); /* CUSTOM: Lighter when focused */
 }
 
+/* CUSTOM: Dropdown options styling for better contrast */
+.select option {
+  background: var(--base50);
+  color: var(--base900);
+}
+
 /* Search */
 .search {
   position: relative;

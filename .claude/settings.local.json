@@ -39,7 +39,9 @@
       "Bash(npm view:*)",
       "Bash(timeout:*)",
       "Bash(curl:*)",
-      "Bash(nul)"
+      "Bash(nul)",
+      "Bash(npm run build:*)",
+      "Bash(cmd /c \"taskkill /F /IM node.exe\")"
     ],
     "deny": [],
     "ask": []

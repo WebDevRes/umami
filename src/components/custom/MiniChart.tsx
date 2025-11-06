@@ -72,10 +72,10 @@ export function MiniChart({ data, activeMetrics, height = 80, className }: MiniC
         data: values,
         borderColor: colors.line,
         backgroundColor: colors.gradient,
-        borderWidth: 2,
+        borderWidth: 1, // CUSTOM: Thinner line (was 2)
         fill: true,
         tension: 0.4, // Smooth curves
-        pointRadius: 0, // No dots on line
+        pointRadius: 0, // CUSTOM: No dots on mini charts (too cluttered for 90 days)
         pointHoverRadius: 4, // Show dot on hover
         pointHoverBackgroundColor: colors.line,
         pointHoverBorderColor: '#fff',
@@ -146,6 +146,15 @@ export function MiniChart({ data, activeMetrics, height = 80, className }: MiniC
                 // Format date
                 const date = tooltipItems[0]?.label;
                 if (!date) return '';
+                // CUSTOM: Check if hourly data
+                if (date.includes(' ')) {
+                  const [dateStr, hour] = date.split(' ');
+                  const d = new Date(dateStr);
+                  return `${d.toLocaleDateString('en-US', {
+                    month: 'short',
+                    day: 'numeric',
+                  })} ${hour}`;
+                }
                 return new Date(date).toLocaleDateString('en-US', {
                   month: 'short',
                   day: 'numeric',

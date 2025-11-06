@@ -511,3 +511,54 @@ const recalculatedDomains = domains.map(domain =>
 - Dropdown automatically sorts: checked tags on top
 
 **Status:** ✅ Complete - Clean, minimalist tag management with smart sorting
+
+---
+
+### 2025-11-06 - Chart Enhancements: Grid, Points, and Today/Yesterday Filters ✅ COMPLETE
+**Files Modified:**
+- `src/lib/custom/types.ts:12,79` - Added hourly data support
+  - Updated `TimeSeriesDataPoint.date` comment: supports `YYYY-MM-DD HH:00` format for hourly data
+  - Updated `FilterState.dateRange` to include `'today' | 'yesterday'`
+- `src/components/custom/FilterBar.tsx:14-21` - Added today/yesterday date range options
+  - Added "Today" and "Yesterday" options at top of DATE_RANGES
+  - Options display hourly data instead of daily aggregates
+- `src/lib/custom/utils.ts:214-251,256-259` - Hourly data filtering logic
+  - Updated `getDateRangeDays()` to return 1 for today/yesterday
+  - Updated `filterTimeSeriesByDateRange()` to filter by specific date (today or yesterday)
+  - Updated `recalculateDomainMetricsForDateRange()` signature to accept today/yesterday
+- `src/lib/custom/mockData.ts:55-108` - Generate hourly mock data
+  - Added `generateHourlyData()` function: creates 24 hours of data for a given date
+  - Updated `generateTimeSeries()` to include hourly data for today and yesterday
+  - Daily data generated for days [90...3], hourly data for days [yesterday, today]
+- `src/components/custom/StatsOverview.tsx:13-18,81-97,136-158,199-216` - Chart visual improvements
+  - **Line thickness:** Reduced from 3px to 1.5px
+  - **Points on lines:** Added visible dots (radius: 2px) to mark data points
+  - **Grid visibility:** Increased grid opacity from 0.05 to 0.08 for better readability
+  - **Hourly labels:** X-axis shows "HH:00" format for hourly data (instead of date)
+  - **Hourly tooltips:** Tooltips display date + hour for hourly data points
+- `src/components/custom/MiniChart.tsx:70-86,147-165` - Mini chart improvements
+  - **Line thickness:** Reduced from 2px to 1px
+  - **Points on lines:** Added small dots (radius: 1.5px) to mark data points
+  - **Hourly tooltips:** Tooltips display date + hour for hourly data points
+
+**Features Added:**
+1. **Grid on main chart:** More visible grid lines (8% opacity instead of 5%)
+2. **Point markers:** Small dots on all chart lines to indicate individual data points
+3. **Thinner lines:** Chart lines reduced to half thickness (better for dense data)
+4. **Today filter:** Shows last 24 hours of data with hourly granularity
+5. **Yesterday filter:** Shows previous day's 24 hours of data with hourly granularity
+
+**User Experience:**
+- **"Today" selected:** Graph shows hourly breakdown (00:00 - 23:00) for current day
+- **"Yesterday" selected:** Graph shows hourly breakdown for previous day
+- **Other ranges (7d/28d/90d):** Continue to show daily aggregated data
+- **X-axis labels:** Automatically switch between date format and hour format
+- **Tooltips:** Show appropriate context (date or date+hour) based on data type
+
+**Visual Improvements:**
+- Clearer grid lines for easier value reading
+- Point markers help identify individual data points
+- Thinner lines reduce visual clutter, especially with multiple metrics
+- Consistent styling between mini charts (domain cards) and main chart
+
+**Status:** ✅ Complete - Enhanced chart readability with grid, points, and hourly data support

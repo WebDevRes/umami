@@ -12,6 +12,8 @@ export interface FilterBarProps {
 }
 
 const DATE_RANGES = [
+  { value: 'today', label: 'Today' }, // CUSTOM: Hourly data for today
+  { value: 'yesterday', label: 'Yesterday' }, // CUSTOM: Hourly data for yesterday
   { value: '7d', label: '7 days' },
   { value: '28d', label: '28 days' },
   { value: '90d', label: '90 days' },

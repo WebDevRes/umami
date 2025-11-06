@@ -211,8 +211,13 @@ export function debounce<T extends (...args: any[]) => any>(
 /**
  * Get date range in days
  */
-export function getDateRangeDays(range: '7d' | '28d' | '90d' | 'custom'): number {
+export function getDateRangeDays(
+  range: 'today' | 'yesterday' | '7d' | '28d' | '90d' | 'custom',
+): number {
   switch (range) {
+    case 'today':
+    case 'yesterday':
+      return 1; // CUSTOM: 1 day with hourly data
     case '7d':
       return 7;
     case '28d':
@@ -229,10 +234,22 @@ export function getDateRangeDays(range: '7d' | '28d' | '90d' | 'custom'): number
  */
 export function filterTimeSeriesByDateRange(
   timeSeries: Array<{ date: string; [key: string]: any }>,
-  dateRange: '7d' | '28d' | '90d' | 'custom',
+  dateRange: 'today' | 'yesterday' | '7d' | '28d' | '90d' | 'custom',
 ): Array<{ date: string; [key: string]: any }> {
+  // CUSTOM: For today/yesterday, filter by specific date (hourly data)
+  if (dateRange === 'today') {
+    const today = new Date().toISOString().split('T')[0];
+    return timeSeries.filter(point => point.date.startsWith(today));
+  }
+  if (dateRange === 'yesterday') {
+    const yesterday = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString().split('T')[0];
+    return timeSeries.filter(point => point.date.startsWith(yesterday));
+  }
+
+  // CUSTOM: For other ranges (7d/28d/90d), filter ONLY daily data (exclude hourly)
   const days = getDateRangeDays(dateRange);
-  return timeSeries.slice(-days);
+  const dailyData = timeSeries.filter(point => !point.date.includes(' ')); // Exclude hourly data
+  return dailyData.slice(-days);
 }
 
 /**
@@ -240,10 +257,11 @@ export function filterTimeSeriesByDateRange(
  */
 export function recalculateDomainMetricsForDateRange(
   domain: DomainMetrics,
-  dateRange: '7d' | '28d' | '90d' | 'custom',
+  dateRange: 'today' | 'yesterday' | '7d' | '28d' | '90d' | 'custom',
 ): DomainMetrics {
+  // CUSTOM: Use filterTimeSeriesByDateRange for proper today/yesterday filtering
+  const filteredTimeSeries = filterTimeSeriesByDateRange(domain.timeSeries, dateRange);
   const days = getDateRangeDays(dateRange);
-  const filteredTimeSeries = domain.timeSeries.slice(-days);
 
   if (filteredTimeSeries.length === 0) {
     return domain;
@@ -467,7 +485,7 @@ export function filterAndSortDomains(
  */
 export function calculateAggregatedMetrics(
   domains: DomainMetrics[],
-  dateRange?: '7d' | '28d' | '90d' | 'custom',
+  dateRange?: 'today' | 'yesterday' | '7d' | '28d' | '90d' | 'custom',
 ): {
   pageviews: number;
   visits: number;

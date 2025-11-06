@@ -1,5 +1,6 @@
 'use client';
 import { useState, useMemo, useCallback, useEffect } from 'react';
+import { useRouter } from 'next/navigation';
 import PageHeader from '@/components/layout/PageHeader';
 import FilterBar from '@/components/custom/FilterBar';
 import StatsOverview from '@/components/custom/StatsOverview';
@@ -18,6 +19,8 @@ const STORAGE_KEY_TAGS = 'custom-analytics-tags';
 const STORAGE_KEY_DOMAINS = 'custom-analytics-domains';
 
 export function CustomAnalyticsPage() {
+  const router = useRouter();
+
   // Generate mock data (500+ domains)
   const mockData = useMemo<DashboardData>(() => generateMockData(), []);
 
@@ -150,11 +153,12 @@ export function CustomAnalyticsPage() {
   }, [filteredDomains, filterState]);
 
   // Handler: Navigate to domain details
-  const handleDomainClick = useCallback((domainId: string) => {
-    // TODO: Navigate to /websites/{websiteId}
-    // eslint-disable-next-line no-console
-    console.log('Navigate to domain:', domainId);
-  }, []);
+  const handleDomainClick = useCallback(
+    (domainId: string) => {
+      router.push(`/websites/${domainId}`);
+    },
+    [router],
+  );
 
   return (
     <div className={styles.container}>
