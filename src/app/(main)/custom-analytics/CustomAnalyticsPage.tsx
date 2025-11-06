@@ -4,62 +4,95 @@ import { useRouter } from 'next/navigation';
 import PageHeader from '@/components/layout/PageHeader';
 import FilterBar from '@/components/custom/FilterBar';
 import StatsOverview from '@/components/custom/StatsOverview';
-import TagsSection from '@/components/custom/TagsSection';
+// DISABLED: Tags functionality (commented out for now)
+// import TagsSection from '@/components/custom/TagsSection';
 import DomainsGrid from '@/components/custom/DomainsGrid';
-import { generateMockData } from '@/lib/custom/mockData';
+// DISABLED: Mock data - replaced with real API
+// import { generateMockData } from '@/lib/custom/mockData';
+import { fetchDashboardData } from '@/lib/custom/api';
 import {
   filterAndSortDomains,
   calculateAggregatedMetrics,
   recalculateDomainMetricsForDateRange,
+  getDateRangeDays,
 } from '@/lib/custom/utils';
-import type { DomainMetrics, MetricType, FilterState, DashboardData } from '@/lib/custom/types';
+import type { DomainMetrics, MetricType, FilterState } from '@/lib/custom/types';
 import styles from './CustomAnalyticsPage.module.css';
 
-const STORAGE_KEY_TAGS = 'custom-analytics-tags';
-const STORAGE_KEY_DOMAINS = 'custom-analytics-domains';
+// DISABLED: Tags storage
+// const STORAGE_KEY_TAGS = 'custom-analytics-tags';
+const STORAGE_KEY_FAVORITES = 'custom-analytics-favorites';
 
 export function CustomAnalyticsPage() {
   const router = useRouter();
 
-  // Generate mock data (500+ domains)
-  const mockData = useMemo<DashboardData>(() => generateMockData(), []);
+  // Loading and error state
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
   // Filter state
   const [filterState, setFilterState] = useState<FilterState>({
-    dateRange: '28d',
+    dateRange: '7d',
     searchQuery: '',
     sortBy: 'visitors_desc',
-    selectedTags: [],
+    selectedTags: [], // DISABLED: Tags not used
     activeMetrics: ['pageviews', 'visits', 'visitors'],
   });
 
-  // Tag manager state - load from localStorage
-  const [availableTags, setAvailableTags] = useState<string[]>(() => {
-    if (typeof window === 'undefined') return mockData.availableTags;
-    const stored = localStorage.getItem(STORAGE_KEY_TAGS);
-    return stored ? JSON.parse(stored) : mockData.availableTags;
+  // DISABLED: Tag manager state
+  // const [availableTags, setAvailableTags] = useState<string[]>([]);
+
+  // Domain data state - fetched from API
+  const [domains, setDomains] = useState<DomainMetrics[]>([]);
+
+  // Favorites state - load from localStorage
+  const [favorites, setFavorites] = useState<Set<string>>(() => {
+    if (typeof window === 'undefined') return new Set();
+    const stored = localStorage.getItem(STORAGE_KEY_FAVORITES);
+    return stored ? new Set(JSON.parse(stored)) : new Set();
   });
 
-  // Domain management state (for favorites and tags) - load from localStorage
-  const [domains, setDomains] = useState<DomainMetrics[]>(() => {
-    if (typeof window === 'undefined') return mockData.domains;
-    const stored = localStorage.getItem(STORAGE_KEY_DOMAINS);
-    return stored ? JSON.parse(stored) : mockData.domains;
-  });
-
-  // Save tags to localStorage whenever they change
+  // Save favorites to localStorage whenever they change
   useEffect(() => {
     if (typeof window !== 'undefined') {
-      localStorage.setItem(STORAGE_KEY_TAGS, JSON.stringify(availableTags));
+      localStorage.setItem(STORAGE_KEY_FAVORITES, JSON.stringify([...favorites]));
     }
-  }, [availableTags]);
+  }, [favorites]);
 
-  // Save domains to localStorage whenever they change
+  // Fetch real data from API
   useEffect(() => {
-    if (typeof window !== 'undefined') {
-      localStorage.setItem(STORAGE_KEY_DOMAINS, JSON.stringify(domains));
-    }
-  }, [domains]);
+    const loadData = async () => {
+      try {
+        setIsLoading(true);
+        setError(null);
+
+        const dateRangeDays = getDateRangeDays(filterState.dateRange);
+        const dashboardData = await fetchDashboardData(dateRangeDays);
+
+        // Apply favorites from localStorage
+        const domainsWithFavorites = dashboardData.domains.map(domain => ({
+          ...domain,
+          isFavorite: favorites.has(domain.id),
+        }));
+
+        setDomains(domainsWithFavorites);
+      } catch (err) {
+        // eslint-disable-next-line no-console
+        console.error('Failed to load dashboard data:', err);
+        setError(err instanceof Error ? err.message : 'Failed to load data');
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    loadData();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [filterState.dateRange]); // Reload when date range changes
+
+  // Update favorites in domains when favorites set changes
+  useEffect(() => {
+    setDomains(prev => prev.map(d => ({ ...d, isFavorite: favorites.has(d.id) })));
+  }, [favorites]);
 
   // Recalculate domain metrics based on selected date range, then filter and sort
   const filteredDomains = useMemo(() => {
@@ -93,9 +126,15 @@ export function CustomAnalyticsPage() {
 
   // Handler: Toggle favorite
   const handleToggleFavorite = useCallback((domainId: string) => {
-    setDomains(prev =>
-      prev.map(d => (d.id === domainId ? { ...d, isFavorite: !d.isFavorite } : d)),
-    );
+    setFavorites(prev => {
+      const newFavorites = new Set(prev);
+      if (newFavorites.has(domainId)) {
+        newFavorites.delete(domainId);
+      } else {
+        newFavorites.add(domainId);
+      }
+      return newFavorites;
+    });
   }, []);
 
   // Handler: Toggle single metric
@@ -112,7 +151,8 @@ export function CustomAnalyticsPage() {
     });
   }, []);
 
-  // Handler: Tag toggle
+  // DISABLED: Tag handlers (commented out)
+  /*
   const handleTagToggle = useCallback(
     (tag: string) => {
       const isSelected = filterState.selectedTags.includes(tag);
@@ -124,26 +164,23 @@ export function CustomAnalyticsPage() {
     [filterState.selectedTags, handleFilterChange],
   );
 
-  // Handler: Clear tags
   const handleClearTags = useCallback(() => {
     handleFilterChange({ selectedTags: [] });
   }, [handleFilterChange]);
 
-  // Handler: Create tag
   const handleCreateTag = useCallback((tag: string) => {
     setAvailableTags(prev => [...prev, tag]);
   }, []);
 
-  // Handler: Delete tag
   const handleDeleteTag = useCallback((tag: string) => {
     setAvailableTags(prev => prev.filter(t => t !== tag));
     setDomains(prev => prev.map(d => ({ ...d, tags: d.tags.filter(t => t !== tag) })));
   }, []);
 
-  // Handler: Update domain tags
   const handleDomainTagsChange = useCallback((domainId: string, tags: string[]) => {
     setDomains(prev => prev.map(d => (d.id === domainId ? { ...d, tags } : d)));
   }, []);
+  */
 
   // Handler: Export data
   const handleExport = useCallback(() => {
@@ -159,6 +196,30 @@ export function CustomAnalyticsPage() {
     },
     [router],
   );
+
+  // Show loading state
+  if (isLoading) {
+    return (
+      <div className={styles.container}>
+        <PageHeader title="Custom Analytics" />
+        <div className={styles.content}>
+          <div style={{ textAlign: 'center', padding: '40px' }}>Loading...</div>
+        </div>
+      </div>
+    );
+  }
+
+  // Show error state
+  if (error) {
+    return (
+      <div className={styles.container}>
+        <PageHeader title="Custom Analytics" />
+        <div className={styles.content}>
+          <div style={{ textAlign: 'center', padding: '40px', color: 'red' }}>Error: {error}</div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className={styles.container}>
@@ -179,7 +240,8 @@ export function CustomAnalyticsPage() {
           onMetricToggle={handleMetricToggle}
         />
 
-        {/* Tags Section (replaces MetricToggle position) */}
+        {/* DISABLED: Tags Section */}
+        {/*
         <TagsSection
           availableTags={availableTags}
           selectedTags={filterState.selectedTags}
@@ -188,15 +250,16 @@ export function CustomAnalyticsPage() {
           onCreateTag={handleCreateTag}
           onDeleteTag={handleDeleteTag}
         />
+        */}
 
         {/* Domains Grid */}
         <DomainsGrid
           domains={regularDomains}
           favorites={favoriteDomains}
           activeMetrics={filterState.activeMetrics}
-          availableTags={availableTags}
+          availableTags={[]} // DISABLED: Empty tags array
           onFavoriteToggle={handleToggleFavorite}
-          onTagsChange={handleDomainTagsChange}
+          onTagsChange={() => {}} // DISABLED: No-op handler
           onDomainClick={handleDomainClick}
         />
       </div>

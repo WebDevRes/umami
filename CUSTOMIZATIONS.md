@@ -562,3 +562,59 @@ const recalculatedDomains = domains.map(domain =>
 - Consistent styling between mini charts (domain cards) and main chart
 
 **Status:** ✅ Complete - Enhanced chart readability with grid, points, and hourly data support
+
+---
+
+### 2025-11-06 - Real Data Integration (Phase 8) ✅ COMPLETE
+**Files Added:**
+- `src/lib/custom/api.ts` - API integration layer for fetching real data from Umami
+
+**Files Modified:**
+- `src/app/(main)/custom-analytics/CustomAnalyticsPage.tsx` - Replaced mock data with real API calls
+  - Import `fetchDashboardData` instead of `generateMockData`
+  - Added loading/error states (lines 30-31)
+  - Fetch real data on mount and date range change (lines 62-89)
+  - Store favorites in localStorage (Set-based, lines 48-60, 91-94)
+  - **DISABLED:** All tags functionality (commented out, not deleted)
+  - Removed TagsSection component from render
+  - Pass empty tags array to DomainsGrid
+- `src/components/custom/DomainCard.tsx:151-184` - Tag button and menu commented out
+  - Tag icon (🏷️) and dropdown menu disabled
+  - Only favorite star (★/☆) button visible
+- `src/lib/custom/utils.ts:4,236-238` - Added TimeSeriesDataPoint import and fixed types
+
+**API Integration:**
+- `fetchUserWebsites()` - Fetch all user websites from `/api/me/websites`
+- `fetchWebsiteStats()` - Fetch stats (pageviews, visits, visitors, bounces) for date range
+- `fetchWebsitePageviews()` - Fetch time series data (hourly or daily)
+- `fetchDashboardData()` - Main function fetching complete dashboard data in parallel
+- Converts Umami API format to Custom Analytics types (DomainMetrics)
+- Calculates percentage changes comparing current vs previous period
+- Handles errors gracefully (fallback to zero metrics)
+
+**Features:**
+- ✅ Real domains from database
+- ✅ Real metrics (pageviews, visits, visitors, bounces, avgTime)
+- ✅ Real time series charts
+- ✅ Date range filtering (7d/28d/90d)
+- ✅ Favorites persistence (localStorage)
+- ❌ **Tags DISABLED** (commented out, ready to re-enable later)
+
+**User Experience:**
+- Loading indicator while fetching data
+- Error message if API fails
+- Favorites survive page refresh
+- Data reloads when date range changes
+
+**Merge Strategy:**
+- New isolated file (`api.ts`)
+- Tags functionality preserved (commented, not deleted)
+- Can be reverted by uncommenting tags code and switching back to `generateMockData()`
+- No database migrations required
+
+**Next Steps:**
+- Test on local dev environment with real database
+- Deploy to production server
+- Optional: Enable tags with database migration later
+
+**Status:** ✅ Complete - Real data integration ready for production deployment

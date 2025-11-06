@@ -1,7 +1,7 @@
 // CUSTOM: Utility functions for custom analytics interface
 // Date: 2025-01-04
 
-import type { DomainMetrics, MetricType, SortOption } from './types';
+import type { DomainMetrics, MetricType, SortOption, TimeSeriesDataPoint } from './types';
 
 /**
  * Format large numbers with K/M suffix
@@ -233,9 +233,9 @@ export function getDateRangeDays(
  * Filter time series by date range
  */
 export function filterTimeSeriesByDateRange(
-  timeSeries: Array<{ date: string; [key: string]: any }>,
+  timeSeries: TimeSeriesDataPoint[],
   dateRange: 'today' | 'yesterday' | '7d' | '28d' | '90d' | 'custom',
-): Array<{ date: string; [key: string]: any }> {
+): TimeSeriesDataPoint[] {
   // CUSTOM: For today/yesterday, filter by specific date (hourly data)
   if (dateRange === 'today') {
     const today = new Date().toISOString().split('T')[0];

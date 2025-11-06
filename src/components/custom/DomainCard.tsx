@@ -1,4 +1,4 @@
-import { memo, useCallback, useState, useRef, useEffect, useMemo } from 'react';
+import { memo, useCallback /*, useState, useRef, useEffect, useMemo */ } from 'react';
 import Icons from '@/components/icons';
 import { DomainMetrics, MetricType } from '@/lib/custom/types';
 import Favicon from '@/components/common/Favicon';
@@ -10,7 +10,7 @@ export interface DomainCardProps {
   activeMetrics: MetricType[];
   availableTags?: string[];
   onFavoriteToggle: (id: string) => void;
-  onTagsChange?: (domainId: string, tags: string[]) => void;
+  // onTagsChange?: (domainId: string, tags: string[]) => void; // DISABLED
   onClick: (id: string) => void;
 }
 
@@ -41,13 +41,14 @@ function formatTime(seconds: number): string {
 function DomainCardComponent({
   domain,
   activeMetrics,
-  availableTags = [],
+  // availableTags = [], // DISABLED
   onFavoriteToggle,
-  onTagsChange,
+  // onTagsChange, // DISABLED
   onClick,
 }: DomainCardProps) {
-  const [showTagMenu, setShowTagMenu] = useState(false);
-  const tagMenuRef = useRef<HTMLDivElement>(null);
+  // DISABLED: Tag state
+  // const [showTagMenu, setShowTagMenu] = useState(false);
+  // const tagMenuRef = useRef<HTMLDivElement>(null);
 
   const handleFavoriteClick = useCallback(
     (e: React.MouseEvent) => {
@@ -61,6 +62,8 @@ function DomainCardComponent({
     onClick(domain.id);
   }, [domain.id, onClick]);
 
+  // DISABLED: Tag handlers (commented out to avoid ESLint unused-vars errors)
+  /*
   const handleTagButtonClick = useCallback((e: React.MouseEvent) => {
     e.stopPropagation();
     setShowTagMenu(prev => !prev);
@@ -93,6 +96,9 @@ function DomainCardComponent({
       return () => document.removeEventListener('mousedown', handleClickOutside);
     }
   }, [showTagMenu]);
+  */
+
+  // DISABLED: Sort tags (moved inside comment block above)
 
   const renderMetric = useCallback(
     (metric: MetricType) => {
@@ -130,12 +136,14 @@ function DomainCardComponent({
     [domain],
   );
 
-  // Sort tags: active first, then inactive
+  // DISABLED: Sort tags removed (tags feature disabled)
+  /*
   const sortedTags = useMemo(() => {
     const activeTags = availableTags.filter(tag => domain.tags.includes(tag));
     const inactiveTags = availableTags.filter(tag => !domain.tags.includes(tag));
     return [...activeTags, ...inactiveTags];
   }, [availableTags, domain.tags]);
+  */
 
   return (
     <div className={styles.card} onClick={handleCardClick}>
@@ -148,6 +156,7 @@ function DomainCardComponent({
           </span>
         </div>
         <div className={styles.headerActions}>
+          {/* DISABLED: Tag button and menu
           {availableTags.length > 0 && onTagsChange && (
             <div className={styles.tagMenuContainer} ref={tagMenuRef}>
               <button
@@ -180,6 +189,7 @@ function DomainCardComponent({
               )}
             </div>
           )}
+          */}
           <button
             className={`${styles.favoriteBtn} ${domain.isFavorite ? styles.active : ''}`}
             onClick={handleFavoriteClick}
