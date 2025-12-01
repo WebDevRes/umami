@@ -1,7 +1,61 @@
 // CUSTOM: Utility functions for custom analytics interface
 // Date: 2025-01-04
 
+import { subDays, startOfDay, endOfDay } from 'date-fns';
+import { utcToZonedTime } from 'date-fns-tz';
 import type { DomainMetrics, MetricType, SortOption, TimeSeriesDataPoint } from './types';
+
+/**
+ * CUSTOM: Convert FilterBar date range to actual Date objects
+ * Uses timezone-aware calculation to ensure dates match the user's selected timezone.
+ *
+ * Problem: parseDateRange uses browser's local time, but toUtc expects timezone from store.
+ * If browser timezone differs from store timezone, dates shift incorrectly.
+ *
+ * Solution: Use utcToZonedTime to get current time in target timezone first,
+ * then apply startOfDay/endOfDay to that zoned time.
+ */
+export function getDateRangeForFilter(
+  filter: 'today' | 'yesterday' | '7d' | '28d' | '90d' | 'custom',
+  timezone: string,
+): { startDate: Date; endDate: Date } {
+  // Get current UTC time and convert to target timezone representation
+  const utcNow = new Date();
+  const nowInTz = utcToZonedTime(utcNow, timezone);
+
+  // Apply startOfDay/endOfDay to the zoned time
+  const todayStart = startOfDay(nowInTz);
+  const todayEnd = endOfDay(nowInTz);
+
+  switch (filter) {
+    case 'today':
+      return { startDate: todayStart, endDate: todayEnd };
+
+    case 'yesterday': {
+      const yesterdayInTz = subDays(nowInTz, 1);
+      return {
+        startDate: startOfDay(yesterdayInTz),
+        endDate: endOfDay(yesterdayInTz),
+      };
+    }
+
+    case '7d':
+      // 7 days = today + 6 previous days
+      return { startDate: subDays(todayStart, 6), endDate: todayEnd };
+
+    case '28d':
+      // 28 days = today + 27 previous days
+      return { startDate: subDays(todayStart, 27), endDate: todayEnd };
+
+    case '90d':
+      // 90 days = today + 89 previous days
+      return { startDate: subDays(todayStart, 89), endDate: todayEnd };
+
+    default:
+      // Default to 7 days
+      return { startDate: subDays(todayStart, 6), endDate: todayEnd };
+  }
+}
 
 /**
  * Format large numbers with K/M suffix
@@ -230,6 +284,30 @@ export function getDateRangeDays(
 }
 
 /**
+ * Get date range value in umami format for parseDateRange
+ * CUSTOM: Returns string format compatible with umami's parseDateRange function
+ * Note: umami DEFAULT_DATE_RANGE is '24hour', not '1day'
+ */
+export function getDateRangeValue(
+  range: 'today' | 'yesterday' | '7d' | '28d' | '90d' | 'custom',
+): string {
+  switch (range) {
+    case 'today':
+      return '24hour'; // CUSTOM: Match umami's default behavior (last 24 hours from current hour)
+    case 'yesterday':
+      return '24hour'; // TODO: Could add offset support for yesterday
+    case '7d':
+      return '7day';
+    case '28d':
+      return '28day';
+    case '90d':
+      return '90day';
+    default:
+      return '7day';
+  }
+}
+
+/**
  * Filter time series by date range
  */
 export function filterTimeSeriesByDateRange(
@@ -258,108 +336,24 @@ export function recalculateDomainMetricsForDateRange(
   domain: DomainMetrics,
   dateRange: 'today' | 'yesterday' | '7d' | '28d' | '90d' | 'custom',
 ): DomainMetrics {
-  // CUSTOM: For today/yesterday, data is already fetched with correct period (hourly)
-  // No need to recalculate - API returned data for exactly last 24h
+  // CUSTOM: For ALL date ranges, API already returns correct aggregated metrics
+  // for the requested period. We only need to filter timeSeries for the chart.
+  // DO NOT recalculate pageviews/visits/visitors - they come from stats API!
+
+  // For today/yesterday, return as-is (hourly data)
   if (dateRange === 'today' || dateRange === 'yesterday') {
     return domain;
   }
 
-  // CUSTOM: Use filterTimeSeriesByDateRange for other ranges
+  // For 7d/28d/90d, only filter timeSeries for chart display
+  // Keep the original metrics from API!
   const filteredTimeSeries = filterTimeSeriesByDateRange(domain.timeSeries, dateRange);
-  const days = getDateRangeDays(dateRange);
-
-  if (filteredTimeSeries.length === 0) {
-    // Return domain with empty timeSeries
-    return {
-      ...domain,
-      timeSeries: [],
-    };
-  }
-
-  // Calculate current metrics from filtered time series
-  const currentPageviews = Math.round(
-    filteredTimeSeries.reduce((sum, d) => sum + d.pageviews, 0) / filteredTimeSeries.length,
-  );
-  const currentVisits = Math.round(
-    filteredTimeSeries.reduce((sum, d) => sum + d.visits, 0) / filteredTimeSeries.length,
-  );
-  const currentVisitors = Math.round(
-    filteredTimeSeries.reduce((sum, d) => sum + d.visitors, 0) / filteredTimeSeries.length,
-  );
-  const currentBounces = Math.round(
-    filteredTimeSeries.reduce((sum, d) => sum + d.bounces, 0) / filteredTimeSeries.length,
-  );
-  const currentAvgTime = Math.round(
-    filteredTimeSeries.reduce((sum, d) => sum + d.avgTime, 0) / filteredTimeSeries.length,
-  );
-
-  // Calculate previous period metrics (same length before current period)
-  const previousTimeSeries = domain.timeSeries.slice(-(days * 2), -days);
-
-  let previousPageviews = currentPageviews;
-  let previousVisits = currentVisits;
-  let previousVisitors = currentVisitors;
-  let previousBounces = currentBounces;
-  let previousAvgTime = currentAvgTime;
-
-  if (previousTimeSeries.length > 0) {
-    previousPageviews = Math.round(
-      previousTimeSeries.reduce((sum, d) => sum + d.pageviews, 0) / previousTimeSeries.length,
-    );
-    previousVisits = Math.round(
-      previousTimeSeries.reduce((sum, d) => sum + d.visits, 0) / previousTimeSeries.length,
-    );
-    previousVisitors = Math.round(
-      previousTimeSeries.reduce((sum, d) => sum + d.visitors, 0) / previousTimeSeries.length,
-    );
-    previousBounces = Math.round(
-      previousTimeSeries.reduce((sum, d) => sum + d.bounces, 0) / previousTimeSeries.length,
-    );
-    previousAvgTime = Math.round(
-      previousTimeSeries.reduce((sum, d) => sum + d.avgTime, 0) / previousTimeSeries.length,
-    );
-  }
-
-  // Calculate percentage changes
-  const pageviewsChange =
-    previousPageviews > 0 ? ((currentPageviews - previousPageviews) / previousPageviews) * 100 : 0;
-  const visitsChange =
-    previousVisits > 0 ? ((currentVisits - previousVisits) / previousVisits) * 100 : 0;
-  const visitorsChange =
-    previousVisitors > 0 ? ((currentVisitors - previousVisitors) / previousVisitors) * 100 : 0;
-  const bouncesChange =
-    previousBounces > 0 ? ((currentBounces - previousBounces) / previousBounces) * 100 : 0;
-  const avgTimeChange =
-    previousAvgTime > 0 ? ((currentAvgTime - previousAvgTime) / previousAvgTime) * 100 : 0;
 
   return {
     ...domain,
-    pageviews: {
-      current: currentPageviews,
-      previous: previousPageviews,
-      change: Math.round(pageviewsChange * 10) / 10,
-    },
-    visits: {
-      current: currentVisits,
-      previous: previousVisits,
-      change: Math.round(visitsChange * 10) / 10,
-    },
-    visitors: {
-      current: currentVisitors,
-      previous: previousVisitors,
-      change: Math.round(visitorsChange * 10) / 10,
-    },
-    bounces: {
-      current: currentBounces,
-      previous: previousBounces,
-      change: Math.round(bouncesChange * 10) / 10,
-    },
-    avgTime: {
-      current: currentAvgTime,
-      previous: previousAvgTime,
-      change: Math.round(avgTimeChange * 10) / 10,
-    },
     timeSeries: filteredTimeSeries,
+    // pageviews, visits, visitors, bounces, avgTime remain UNCHANGED
+    // (they are already correct from stats API)
   };
 }
 

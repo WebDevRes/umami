@@ -1,6 +1,7 @@
 'use client';
 import { useState, useMemo, useCallback, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
+import { useTimezone } from '@/components/hooks';
 import PageHeader from '@/components/layout/PageHeader';
 import FilterBar from '@/components/custom/FilterBar';
 import StatsOverview from '@/components/custom/StatsOverview';
@@ -14,7 +15,7 @@ import {
   filterAndSortDomains,
   calculateAggregatedMetrics,
   recalculateDomainMetricsForDateRange,
-  getDateRangeDays,
+  getDateRangeForFilter,
 } from '@/lib/custom/utils';
 import type { DomainMetrics, MetricType, FilterState } from '@/lib/custom/types';
 import styles from './CustomAnalyticsPage.module.css';
@@ -25,6 +26,8 @@ const STORAGE_KEY_FAVORITES = 'custom-analytics-favorites';
 
 export function CustomAnalyticsPage() {
   const router = useRouter();
+  // CUSTOM: Use timezone hook for UTC conversion
+  const { timezone, toUtc } = useTimezone();
 
   // Loading and error state
   const [isLoading, setIsLoading] = useState(true);
@@ -59,6 +62,17 @@ export function CustomAnalyticsPage() {
     }
   }, [favorites]);
 
+  // CUSTOM: Calculate startAt/endAt from FilterBar's dateRange using getDateRangeForFilter
+  // This replaces useDateRange() which reads from global store (not connected to FilterBar)
+  // Pass timezone to ensure dates are calculated in the correct timezone
+  const { startDate, endDate } = useMemo(
+    () => getDateRangeForFilter(filterState.dateRange, timezone),
+    [filterState.dateRange, timezone],
+  );
+
+  const startAt = +toUtc(startDate);
+  const endAt = +toUtc(endDate);
+
   // Fetch real data from API
   useEffect(() => {
     const loadData = async () => {
@@ -66,8 +80,8 @@ export function CustomAnalyticsPage() {
         setIsLoading(true);
         setError(null);
 
-        const dateRangeDays = getDateRangeDays(filterState.dateRange);
-        const dashboardData = await fetchDashboardData(dateRangeDays);
+        // CUSTOM: Pass same parameters as main dashboard (startAt, endAt, timezone)
+        const dashboardData = await fetchDashboardData(startAt, endAt, timezone);
 
         // Apply favorites from localStorage
         const domainsWithFavorites = dashboardData.domains.map(domain => ({
@@ -87,7 +101,7 @@ export function CustomAnalyticsPage() {
 
     loadData();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [filterState.dateRange]); // Reload when date range changes
+  }, [startAt, endAt, timezone]); // Reload when date range or timezone changes
 
   // Update favorites in domains when favorites set changes
   useEffect(() => {
